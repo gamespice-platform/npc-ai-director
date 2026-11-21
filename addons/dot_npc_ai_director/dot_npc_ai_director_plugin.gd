@@ -10,7 +10,7 @@ const _ICON := "res://addons/dot_npc_ai_director/icon_placeholder.svg"
 
 const _TYPES := [
 	[
-		"DotNpcDirector",
+		"GSNpcDirector",
 		"Node",
 		"res://addons/dot_npc_ai_director/runtime/dot_npc_director.gd",
 	],

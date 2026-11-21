@@ -1,4 +1,4 @@
-class_name DotNpcStuckRescue
+class_name GSNpcStuckRescue
 extends RefCounted
 
 ## Notices an NPC that makes no progress toward the survivors: repath, then relocate, then remove so the caller can re-spawn it.

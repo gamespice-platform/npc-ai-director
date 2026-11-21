@@ -1,4 +1,4 @@
-class_name DotWaveSpec
+class_name GSWaveSpec
 extends RefCounted
 
 ## One wave as resolved for a match: what a game reads at wave start so it never reads yml mid-match.

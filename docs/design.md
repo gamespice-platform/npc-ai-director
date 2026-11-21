@@ -6,7 +6,7 @@ Why the director is shaped the way it is, and why the obvious alternative is wro
 
 **A director driven by a timer gives every player the same game whether they are winning or losing.** The co-operative survival shooters' insight was to drive it from an estimate of what the players are *experiencing* instead: a team that is struggling gets a moment to recover and a team that is coasting gets something to do, from the same rules, with no difficulty setting.
 
-That estimate is `DotNpcDirectorStress`, and the four phases are what it moves between:
+That estimate is `GSNpcDirectorStress`, and the four phases are what it moves between:
 
 | Phase | |
 | --- | --- |
@@ -34,7 +34,7 @@ The distance is the **least-travelled** player's, not the most: one player scout
 
 ## Flow: where "ahead" is
 
-`DotNpcDirectorFlow` is the map's critical path as a distance along a line. Without it a director cannot spawn ahead of anybody, and **spawning ahead is most of what makes a director feel like a director**: a director that spawned evenly around the party makes retreating impossible, which removes the only decision the players had.
+`GSNpcDirectorFlow` is the map's critical path as a distance along a line. Without it a director cannot spawn ahead of anybody, and **spawning ahead is most of what makes a director feel like a director**: a director that spawned evenly around the party makes retreating impossible, which removes the only decision the players had.
 
 "Ahead" cannot be a direction (a party walking a horseshoe corridor is facing away from where it is going for half the map), so it has to be a position along the route the level was built around. In this family's code-built maps that route is a handful of constants, and dot-map's catalogue is where a game would keep it.
 
@@ -49,27 +49,27 @@ Every candidate is scored and the best wins. An unscored search that takes the f
 
 ## Spawn points are given, not derived
 
-A navigable point is not automatically a legal spawn: a game wants its horde coming out of the dark corridor rather than out of the safe room, and only the map knows which is which. `DotNpcNavData.points` is a reasonable default, and `DotNpcDirector.set_spawn_points_from_nav` fills `spawn_points` from it, as an explicit call, because which points are *legal* is a level design question and a game that wants better passes better.
+A navigable point is not automatically a legal spawn: a game wants its horde coming out of the dark corridor rather than out of the safe room, and only the map knows which is which. `GSNpcNavData.points` is a reasonable default, and `GSNpcDirector.set_spawn_points_from_nav` fills `spawn_points` from it, as an explicit call, because which points are *legal* is a level design question and a game that wants better passes better.
 
 **The thinning is not a nicety.** `choose_spawn_point` walks every candidate and, for each one inside the distance band, asks whether a player can see it, which is a raycast. A two-metre grid over a modest map is a few thousand points, so an unthinned list is a few thousand raycasts per wave, several times a minute, on the server. `minimum_spacing` defaults to eight metres, about a room.
 
-It takes a `DotNpcNavFilter` for the same reason a path does: `DotNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels it cannot use, and one excluding `AVOID` keeps it off the ledges.
+It takes a `GSNpcNavFilter` for the same reason a path does: `GSNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels it cannot use, and one excluding `AVOID` keeps it off the ledges.
 
 ## Reclaiming is along the route, not by distance
 
-Distance alone reclaims the wave waiting in the room the party is about to walk into, which is the wave that was the whole point. GameSpice NPC's own `reclaim_distance` (in `DotNpcLimits`) is the safety net underneath this, and it stays on.
+Distance alone reclaims the wave waiting in the room the party is about to walk into, which is the wave that was the whole point. GameSpice NPC's own `reclaim_distance` (in `GSNpcLimits`) is the safety net underneath this, and it stays on.
 
-The director only reclaims what it spawned (`owner_id == &"director"`), because a scripted set piece is not its to tidy away, and it never takes an NPC that has a target. `reclaim_interval` of 0 means every tick, as `spawn_interval` does in `DotNpcLimits`.
+The director only reclaims what it spawned (`owner_id == &"director"`), because a scripted set piece is not its to tidy away, and it never takes an NPC that has a target. `reclaim_interval` of 0 means every tick, as `spawn_interval` does in `GSNpcLimits`.
 
 ## It owns no NPCs
 
-Every spawn, cap, reclaim and budget is `DotNpcSpawner`'s. This decides how many and where, and the spawner is free to refuse. That division is why a game can run a director on some maps and not on others without having two population systems, and it is why `wave_spawned` reports how many actually spawned rather than how many were asked for. The world for the visibility raycast comes from the viewport, because a spawner is a plain `Node`.
+Every spawn, cap, reclaim and budget is `GSNpcSpawner`'s. This decides how many and where, and the spawner is free to refuse. That division is why a game can run a director on some maps and not on others without having two population systems, and it is why `wave_spawned` reports how many actually spawned rather than how many were asked for. The world for the visibility raycast comes from the viewport, because a spawner is a plain `Node`.
 
 The population list is flat and repetition is the weighting: `[&"zombie", &"zombie", &"zombie", &"brute"]` is one brute in four, is obvious at a glance, is a line an operator can edit, and cannot express a weight that does not add up. A table of floats can, and the first thing anybody does with one is get it wrong by 0.05 and never notice. It is walked round-robin rather than sampled, because a random pick from a four-entry list gives four brutes in a row often enough for a player to notice and conclude the director is broken.
 
 ## A 2D game drives this unchanged
 
-Everything here (the stress, the phase, the population target, the travel estimate, the scoring of a spawn point) is arithmetic on points in GameSpice NPC's own plane, and GameSpice NPC's plane is XZ with a vertical that a 2D world never moves. So the only line that has to know which dimension it is in is the one that spawns something, and it asks the spawner: `DotNpcSpawner.two_dimensional` routes it through `spawn_2d`.
+Everything here (the stress, the phase, the population target, the travel estimate, the scoring of a spawn point) is arithmetic on points in GameSpice NPC's own plane, and GameSpice NPC's plane is XZ with a vertical that a 2D world never moves. So the only line that has to know which dimension it is in is the one that spawns something, and it asks the spawner: `GSNpcSpawner.two_dimensional` routes it through `spawn_2d`.
 
 That is deliberately one branch in one function rather than a flag on this class. A director serves a spawner and a spawner serves a world; asking the thing that knows is cheaper than keeping a second copy of the answer, and this family's most repeated bug is two copies of one list.
 
@@ -77,17 +77,17 @@ That is deliberately one branch in one function rather than a flag on this class
 
 | To change | Where |
 | --- | --- |
-| Where a wave may appear | `DotNpcDirector.spawn_points`, `set_spawn_points_from_nav`, or `set_sites` for authored sites with per-site rules (enabled, weight, phases, max_alive via `site_alive_fn`, sight, distance band, `site_filter`; duck-typed, so a DotSpawnPointDef fits without a dot-spawn dependency) |
-| Every number the director has an opinion about | `DotNpcDirectorRules`, layered like every `DotConfig` |
-| What may be spawned, and in what proportion | `DotNpcDirector.population` |
-| Where "ahead" is | `DotNpcDirectorFlow`, from the map's critical path |
+| Where a wave may appear | `GSNpcDirector.spawn_points`, `set_spawn_points_from_nav`, or `set_sites` for authored sites with per-site rules (enabled, weight, phases, max_alive via `site_alive_fn`, sight, distance band, `site_filter`; duck-typed, so a GSSpawnPointDef fits without a dot-spawn dependency) |
+| Every number the director has an opinion about | `GSNpcDirectorRules`, layered like every `GSConfig` |
+| What may be spawned, and in what proportion | `GSNpcDirector.population` |
+| Where "ahead" is | `GSNpcDirectorFlow`, from the map's critical path |
 | What the players are experiencing | `report_player(id, position, health_fraction)` |
-| Whether pacing runs at all | `DotNpcDirector.enabled`, for a scripted set piece |
+| Whether pacing runs at all | `GSNpcDirector.enabled`, for a scripted set piece |
 | What a spawned NPC then does | its brain: GameSpice NPC's, or GameSpice NPC AI's |
 
 ## A hold-out is a schedule, not a cycle
 
-The stress cycle paces a team that is moving: its relax ends on distance travelled. A team holding a place does not travel, so its relax never ends, and the cycle has nothing to say about when a hold is won. `DotNpcDirectorWaves` is the other half: a fixed schedule of quiet and horde stretches in one of three styles.
+The stress cycle paces a team that is moving: its relax ends on distance travelled. A team holding a place does not travel, so its relax never ends, and the cycle has nothing to say about when a hold is won. `GSNpcDirectorWaves` is the other half: a fixed schedule of quiet and horde stretches in one of three styles.
 
 | Style | Horde stretch | Ends | Quiet stretch |
 | --- | --- | --- | --- |
@@ -103,12 +103,12 @@ The stress cycle paces a team that is moving: its relax ends on distance travell
 
 ## Deliberately not here
 
-- **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content. The director only rations which population ids count as special (`DotNpcDirectorSpecials`, off by default).
+- **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content. The director only rations which population ids count as special (`GSNpcDirectorSpecials`, off by default).
 - **No map events.** Scripted climaxes, safe rooms and finales are level scripting.
 - **No item or ammo placement.** Directors in the genre often do that too; here it is dot-loadout's world pickups and a game's decision, and joining them would make this addon depend on one more thing.
-- **No difficulty setting by default.** `difficulty_enabled` is off; when on, it only publishes accuracy and damage multipliers (`DotNpcDirectorDifficulty`) for the host to apply, because the director knows no combat addon.
+- **No difficulty setting by default.** `difficulty_enabled` is off; when on, it only publishes accuracy and damage multipliers (`GSNpcDirectorDifficulty`) for the host to apply, because the director knows no combat addon.
 - **No player-versus-player director.** Deciding where a human-controlled special enemy may spawn is a different problem with a fairness constraint this has nothing to say about.
 
 ## Optional adaptation (all off by default)
 
-Three groups in `DotNpcDirectorRules`, each with an `_enabled` switch that leaves behaviour untouched while false. **Skill** (`DotNpcDirectorSkill`): per player, events (health lost, `report_death`, `report_revive`, `report_kill`) fold every `skill_sample_seconds` into a smoothed multiplier within `skill_min`..`skill_max`, blended in over `skill_warmup_seconds` from 1.0, and applied to that player's share of `peak_per_player` in SUSTAIN and FADE. **Difficulty**: a preset name or numeric dial becomes `enemy_accuracy_multiplier()` and `enemy_damage_multiplier()`. **Specials**: `special_kinds` spend a budget that refills one per `special_cooldown_seconds` up to `special_budget_cap`, with `special_max_alive` as a second limit; a denied special becomes the next ordinary kind in the population list.
+Three groups in `GSNpcDirectorRules`, each with an `_enabled` switch that leaves behaviour untouched while false. **Skill** (`GSNpcDirectorSkill`): per player, events (health lost, `report_death`, `report_revive`, `report_kill`) fold every `skill_sample_seconds` into a smoothed multiplier within `skill_min`..`skill_max`, blended in over `skill_warmup_seconds` from 1.0, and applied to that player's share of `peak_per_player` in SUSTAIN and FADE. **Difficulty**: a preset name or numeric dial becomes `enemy_accuracy_multiplier()` and `enemy_damage_multiplier()`. **Specials**: `special_kinds` spend a budget that refills one per `special_cooldown_seconds` up to `special_budget_cap`, with `special_max_alive` as a second limit; a denied special becomes the next ordinary kind in the population list.

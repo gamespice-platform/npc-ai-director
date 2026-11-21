@@ -26,13 +26,13 @@ By hand: copy `addons/dot_npc_ai_director/`, [GameSpice NPC](https://github.com/
 ## Use
 
 ```gdscript
-npcs.authoritative = true                     # the DotNpcSpawner. A client's spawner refuses every spawn
+npcs.authoritative = true                     # the GSNpcSpawner. A client's spawner refuses every spawn
 
-var director := DotNpcDirector.new()
+var director := GSNpcDirector.new()
 director.spawner = npcs
 director.population = [&"zombie", &"zombie", &"zombie", &"brute"]   # taken in turn: 1 brute in 4
-director.set_spawn_points_from_nav(nav)       # a DotNpcNavData, thinned to one point every 8 m
-director.flow = DotNpcDirectorFlow.new(map.route)   # the path through the level, start to finish
+director.set_spawn_points_from_nav(nav)       # a GSNpcNavData, thinned to one point every 8 m
+director.flow = GSNpcDirectorFlow.new(map.route)   # the path through the level, start to finish
 add_child(director)
 
 # Every server tick:
@@ -54,7 +54,7 @@ Signals: `phase_changed(from, to)` and `wave_spawned(at, count)`. `describe_line
 
 ## Waves, nights and clocks
 
-`DotNpcDirectorWaves` is a schedule for a team holding a place.
+`GSNpcDirectorWaves` is a schedule for a team holding a place.
 
 | Style | A horde stretch is | It ends | The quiet between |
 | --- | --- | --- | --- |
@@ -63,8 +63,8 @@ Signals: `phase_changed(from, to)` and `wave_spawned(at, count)`. `describe_line
 | `CLOCK` | one stretch, harder as it runs (0 seconds is forever) | when the clock runs out | none |
 
 ```gdscript
-var waves := DotNpcDirectorWaves.new()
-waves.style = DotNpcDirectorWaves.Style.ROUNDS
+var waves := GSNpcDirectorWaves.new()
+waves.style = GSNpcDirectorWaves.Style.ROUNDS
 waves.count = 10                 # waves, or nights
 waves.quiet_seconds = 30.0       # the breather, or a day
 waves.wave_base = 16             # wave 1 for one player; wave_per_player more for each other
@@ -82,10 +82,10 @@ It spawns nothing itself. It says what is owed and how hard this stretch is (`st
 
 ## Settings
 
-Rules live in a `DotNpcDirectorRules` resource on the director's `rules` (a default is made if unset). Settings are layered: inspector defaults, a JSON file, the environment, then the command line. Call `load_layered()` before adding the director:
+Rules live in a `GSNpcDirectorRules` resource on the director's `rules` (a default is made if unset). Settings are layered: inspector defaults, a JSON file, the environment, then the command line. Call `load_layered()` before adding the director:
 
 ```gdscript
-var rules := DotNpcDirectorRules.new()
+var rules := GSNpcDirectorRules.new()
 rules.load_layered("user://director.json")
 director.rules = rules
 ```

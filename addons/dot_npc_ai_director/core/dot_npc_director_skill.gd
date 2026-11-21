@@ -1,4 +1,4 @@
-class_name DotNpcDirectorSkill
+class_name GSNpcDirectorSkill
 extends RefCounted
 
 ## A slow estimate of how well one player is doing, as a multiplier on their share of the peak.
@@ -35,7 +35,7 @@ func add_kill() -> void:
 	_kills += 1
 
 
-func advance(rules: DotNpcDirectorRules, delta: float) -> void:
+func advance(rules: GSNpcDirectorRules, delta: float) -> void:
 	observed += delta
 	_since_sample += delta
 
@@ -64,7 +64,7 @@ func advance(rules: DotNpcDirectorRules, delta: float) -> void:
 
 
 ## The multiplier to apply: 1.0 for a new player, the estimate once warmed up, always in bounds.
-func multiplier(rules: DotNpcDirectorRules) -> float:
+func multiplier(rules: GSNpcDirectorRules) -> float:
 	var weight := 1.0
 
 	if rules.skill_warmup_seconds > 0.0:

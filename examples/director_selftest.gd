@@ -22,7 +22,7 @@ const SECTIONS := 20
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -84,7 +84,7 @@ func _run() -> void:
 func _test_rules() -> void:
 	_section("rules")
 
-	var rules := DotNpcDirectorRules.new()
+	var rules := GSNpcDirectorRules.new()
 	_check(rules.validate().ok, "the defaults are usable")
 
 	rules.spawn_min_distance = 100.0
@@ -95,15 +95,15 @@ func _test_rules() -> void:
 		"no spawn point could ever be legal"
 	)
 
-	var wide := DotNpcDirectorRules.new()
+	var wide := GSNpcDirectorRules.new()
 	wide.absolute_cap = 900
 	wide.spawn_burst = 0
 	_check(wide.validate().ok, "a cap past 500 and a burst of 0 (unlimited) are allowed")
-	var negative := DotNpcDirectorRules.new()
+	var negative := GSNpcDirectorRules.new()
 	negative.spawn_burst = -1
 	_check(not negative.validate().ok, "a negative burst is refused, not clamped")
 
-	var inverted := DotNpcDirectorRules.new()
+	var inverted := GSNpcDirectorRules.new()
 	inverted.relax_per_player = 40.0
 	inverted.peak_per_player = 10.0
 	_check(
@@ -111,11 +111,11 @@ func _test_rules() -> void:
 		"and a relax busier than a peak inverts the whole cycle"
 	)
 
-	var configured := DotNpcDirectorRules.new()
+	var configured := GSNpcDirectorRules.new()
 	configured.apply_dictionary({"peak_per_player": 30.0})
 	_check(
 		configured.peak_per_player == 30.0,
-		"and it is a DotConfig, so a campaign is retuned in a file"
+		"and it is a GSConfig, so a campaign is retuned in a file"
 	)
 	_done()
 
@@ -124,7 +124,7 @@ func _test_stress() -> void:
 	_section("stress")
 
 	var rules := _rules()
-	var player := DotNpcDirectorStress.make(&"alice")
+	var player := GSNpcDirectorStress.make(&"alice")
 
 	player.advance(rules, Vector3.ZERO, 1.0, 0, 0.1)
 	_check(player.value == 0.0, "a player nothing is happening to has none")
@@ -140,7 +140,7 @@ func _test_stress() -> void:
 	_check(player.value < after_damage, "and it decays with nothing happening",
 		"%.2f from %.2f" % [player.value, after_damage])
 
-	var surrounded := DotNpcDirectorStress.make(&"bob")
+	var surrounded := GSNpcDirectorStress.make(&"bob")
 	surrounded.advance(rules, Vector3.ZERO, 1.0, 0, 0.1)
 
 	for i in 100:
@@ -152,7 +152,7 @@ func _test_stress() -> void:
 		"%.2f; without this a director waits for the first bite" % surrounded.value
 	)
 
-	var falling := DotNpcDirectorStress.make(&"carol")
+	var falling := GSNpcDirectorStress.make(&"carol")
 	falling.advance(rules, Vector3.ZERO, 1.0, 0, 0.1)
 	falling.advance(rules, Vector3(0, -80, 0), 1.0, 0, 0.1)
 	_check(
@@ -167,7 +167,7 @@ func _test_stress_seeding() -> void:
 	_section("stress: joining late")
 
 	var rules := _rules()
-	var joiner := DotNpcDirectorStress.make(&"late")
+	var joiner := GSNpcDirectorStress.make(&"late")
 
 	# First tick at half health: a player who joined hurt, or one the director had not
 	# been told about. Without seeding on the first tick this registers half a health
@@ -188,7 +188,7 @@ func _test_stress_seeding() -> void:
 func _test_flow() -> void:
 	_section("flow")
 
-	var flow := DotNpcDirectorFlow.new(PackedVector3Array([
+	var flow := GSNpcDirectorFlow.new(PackedVector3Array([
 		Vector3(0, 0, 0), Vector3(0, 0, -100), Vector3(50, 0, -100)
 	]))
 
@@ -218,7 +218,7 @@ func _test_flow() -> void:
 		"clamped to the end rather than extrapolated into the void"
 	)
 
-	var arena := DotNpcDirectorFlow.new()
+	var arena := GSNpcDirectorFlow.new()
 	_check(not arena.has_route(), "and a map with no critical path says so honestly")
 	_check(arena.flow_of(Vector3(9, 9, 9)) == 0.0, "rather than refusing")
 	_done()
@@ -269,19 +269,19 @@ func _test_cycle() -> void:
 	var phases: Array[String] = []
 
 	# An Array rather than a counter: a GDScript lambda captures locals BY VALUE.
-	director.phase_changed.connect(func(_f: DotNpcDirector.Phase, t: DotNpcDirector.Phase) -> void:
-		phases.append(DotNpcDirector.Phase.keys()[t]))
+	director.phase_changed.connect(func(_f: GSNpcDirector.Phase, t: GSNpcDirector.Phase) -> void:
+		phases.append(GSNpcDirector.Phase.keys()[t]))
 
 	director.report_player(&"alice", Vector3.ZERO, 1.0)
 
-	_check(director.phase() == DotNpcDirector.Phase.BUILD_UP, "it starts building up")
+	_check(director.phase() == GSNpcDirector.Phase.BUILD_UP, "it starts building up")
 
 	for i in 20:
 		director.report_player(&"alice", Vector3.ZERO, 1.0)
 		director.tick(0.1)
 
 	_check(
-		director.phase() == DotNpcDirector.Phase.BUILD_UP,
+		director.phase() == GSNpcDirector.Phase.BUILD_UP,
 		"and stays there while the players are fine",
 		"now %s" % director.phase_name()
 	)
@@ -295,7 +295,7 @@ func _test_cycle() -> void:
 		director.tick(0.1)
 
 	_check(
-		director.phase() == DotNpcDirector.Phase.SUSTAIN
+		director.phase() == GSNpcDirector.Phase.SUSTAIN
 			or phases.has("SUSTAIN"),
 		"a player having a hard time peaks it",
 		"now %s after %s" % [director.phase_name(), str(phases)]
@@ -339,7 +339,7 @@ func _test_relax_needs_both() -> void:
 
 	var director := _director(spawner, rules)
 	director.report_player(&"alice", Vector3.ZERO, 1.0)
-	director._go_to(DotNpcDirector.Phase.RELAX)
+	director._go_to(GSNpcDirector.Phase.RELAX)
 
 	# Plenty of time, standing still. A team arguing about a door.
 	for i in 200:
@@ -347,7 +347,7 @@ func _test_relax_needs_both() -> void:
 		director.tick(0.1)
 
 	_check(
-		director.phase() == DotNpcDirector.Phase.RELAX,
+		director.phase() == GSNpcDirector.Phase.RELAX,
 		"waiting alone does not end it",
 		"or a team that stopped is attacked on schedule"
 	)
@@ -360,7 +360,7 @@ func _test_relax_needs_both() -> void:
 		director.tick(0.1)
 
 	_check(
-		director.phase() == DotNpcDirector.Phase.BUILD_UP,
+		director.phase() == GSNpcDirector.Phase.BUILD_UP,
 		"and moving as well does",
 		"now %s after %.0f m" % [director.phase_name(), walked]
 	)
@@ -381,7 +381,7 @@ func _test_relax_breaks_on_disaster() -> void:
 
 	var director := _director(spawner, rules)
 	director.report_player(&"alice", Vector3.ZERO, 1.0)
-	director._go_to(DotNpcDirector.Phase.RELAX)
+	director._go_to(GSNpcDirector.Phase.RELAX)
 
 	var health := 1.0
 
@@ -391,7 +391,7 @@ func _test_relax_breaks_on_disaster() -> void:
 		director.tick(0.1)
 
 	_check(
-		director.phase() != DotNpcDirector.Phase.RELAX,
+		director.phase() != GSNpcDirector.Phase.RELAX,
 		"a player being killed during the quiet ends the quiet",
 		"or the pacing keeps spawning into a fight that is already happening"
 	)
@@ -406,13 +406,13 @@ func _test_relax_breaks_on_disaster() -> void:
 func _test_spawn_points_from_nav() -> void:
 	_section("spawn points from navigation")
 
-	var builder := DotNpcNavBuilder.new()
+	var builder := GSNpcNavBuilder.new()
 	builder.spacing = 2.0
 	builder.generate_cover = false
 	builder.add_floor(AABB(Vector3(-20, 0, -20), Vector3(40, 0, 40)), 0.0)
 	builder.add_floor(
 		AABB(Vector3(-20, 0, 20), Vector3(40, 0, 10)), 0.0,
-		DotNpcNavData.AREA_GROUND, DotNpcNavData.Flag.CROUCH
+		GSNpcNavData.AREA_GROUND, GSNpcNavData.Flag.CROUCH
 	)
 
 	var nav := builder.build(&"fc", "digest")
@@ -447,7 +447,7 @@ func _test_spawn_points_from_nav() -> void:
 	)
 
 	var crouch_free := director.set_spawn_points_from_nav(
-		nav, 4.0, DotNpcNavFilter.walking_only()
+		nav, 4.0, GSNpcNavFilter.walking_only()
 	)
 	var in_the_tunnel := 0
 	for point in director.spawn_points:
@@ -648,7 +648,7 @@ func _test_players_leaving() -> void:
 	var director := _director(spawner, rules)
 	director.report_player(&"alice", Vector3.ZERO, 1.0)
 	director.report_player(&"bob", Vector3.ZERO, 1.0)
-	director._go_to(DotNpcDirector.Phase.RELAX)
+	director._go_to(GSNpcDirector.Phase.RELAX)
 
 	# Alice walks; bob disconnects without moving. The relax must not be held open for
 	# ever by somebody who is not there.
@@ -660,7 +660,7 @@ func _test_players_leaving() -> void:
 		director.tick(0.1)
 
 	_check(
-		director.phase() == DotNpcDirector.Phase.RELAX,
+		director.phase() == GSNpcDirector.Phase.RELAX,
 		"a party is as far along as its least-travelled member",
 		"one player scouting ahead has not moved the party anywhere"
 	)
@@ -670,7 +670,7 @@ func _test_players_leaving() -> void:
 
 	_check(director.player_count() == 1, "a player can be forgotten")
 	_check(
-		director.phase() == DotNpcDirector.Phase.BUILD_UP,
+		director.phase() == GSNpcDirector.Phase.BUILD_UP,
 		"and the relax is no longer held open by somebody who has left",
 		"now %s" % director.phase_name()
 	)
@@ -685,7 +685,7 @@ func _test_grace() -> void:
 	var spawner := _spawner()
 	var director := _director(spawner, _rules())
 	director.report_player(&"alice", Vector3.ZERO, 1.0)
-	var grace := DotNpcDirectorGrace.new()
+	var grace := GSNpcDirectorGrace.new()
 	director.grace = grace
 	var ended := [0]
 	grace.ended.connect(func(_skipped: bool) -> void: ended[0] += 1)

@@ -1,4 +1,4 @@
-# The neutral hold-out: ten rounds, the numbers DotNpcDirectorWaves has always had.
+# The neutral hold-out: ten rounds, the numbers GSNpcDirectorWaves has always had.
 # Block style; dot-core v0.1.46 also reads flow mappings such as {a: 1}.
 style: rounds
 count: 10

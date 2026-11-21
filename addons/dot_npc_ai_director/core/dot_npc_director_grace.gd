@@ -1,4 +1,4 @@
-class_name DotNpcDirectorGrace
+class_name GSNpcDirectorGrace
 extends RefCounted
 
 ## A countdown at the start of a round during which nothing spawns, so players can prepare.

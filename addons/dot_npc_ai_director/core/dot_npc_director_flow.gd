@@ -1,4 +1,4 @@
-class_name DotNpcDirectorFlow
+class_name GSNpcDirectorFlow
 extends RefCounted
 
 ## Where "ahead" is. The map's critical path, as a distance along a line.

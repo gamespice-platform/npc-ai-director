@@ -1,14 +1,14 @@
 @tool
 extends Node
 
-## What the game tells a [DotNpcDirector]: spawn points and sites, the players' positions, health and
-## skill records, and the plain questions about them. The pacing that reads these is [DotNpcDirector]'s own.
+## What the game tells a [GSNpcDirector]: spawn points and sites, the players' positions, health and
+## skill records, and the plain questions about them. The pacing that reads these is [GSNpcDirector]'s own.
 
 const CHANNEL := "npc.director"
 
 ## Candidate spawn positions, in world space; usually a map's nav data points. Given, not derived: which
 ## navigable point is a legal spawn (the dark corridor, not the safe room) is a level design question only the
-## map can answer, so `DotNpcNavData.points` is a default and a game that wants better passes better.
+## map can answer, so `GSNpcNavData.points` is a default and a game that wants better passes better.
 var spawn_points: PackedVector3Array = PackedVector3Array()
 
 ## Optional per-point rules, parallel to [member spawn_points]; see [method set_sites].
@@ -28,14 +28,14 @@ var last_site: Variant = null
 ## Score, in metres of preference, that one unit of a site's [code]weight[/code] above 1 is worth.
 const SITE_WEIGHT_METRES := 10.0
 
-## Player id -> DotNpcDirectorStress.
+## Player id -> GSNpcDirectorStress.
 var _players: Dictionary = {}
 
-## Player id -> DotNpcDirectorSkill. Empty while skill is off.
+## Player id -> GSNpcDirectorSkill. Empty while skill is off.
 var _skills: Dictionary = {}
 
 
-## Takes authored sites (duck-typed objects or Dictionaries, so no GameSpice Spawn dependency; a DotSpawnPointDef fits) with
+## Takes authored sites (duck-typed objects or Dictionaries, so no GameSpice Spawn dependency; a GSSpawnPointDef fits) with
 ## [code]position[/code] (Vector3, required), [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 preferred), [code]max_alive[/code] (0 none; needs [member site_alive_fn]), [code]phases[/code] (lower-case, empty is any),
 ## [code]sight[/code] (hidden_from_players / visible_to_players / any), [code]min_player_distance[/code] / [code]max_player_distance[/code] (above 0 replace the band). Returns how many had a Vector3 position.
 func set_sites(sites: Array) -> int:
@@ -67,11 +67,11 @@ static func _site_get(site: Variant, key: String, fallback: Variant) -> Variant:
 
 ## Fills [member spawn_points] from a map's navigation, thinned to [param minimum_spacing] (not a nicety: each candidate in
 ## band costs [method choose_spawn_point] a raycast, so a few thousand unthinned points is a few thousand per wave; 8 m is a room).
-## [param filter] drops what an NPC should not stand on (`DotNpcNavFilter.walking_only()`, `exclude_flags = AVOID`). Returns how many were kept.
+## [param filter] drops what an NPC should not stand on (`GSNpcNavFilter.walking_only()`, `exclude_flags = AVOID`). Returns how many were kept.
 func set_spawn_points_from_nav(
-	nav: DotNpcNavData,
+	nav: GSNpcNavData,
 	minimum_spacing: float = 8.0,
-	filter: DotNpcNavFilter = null
+	filter: GSNpcNavFilter = null
 ) -> int:
 	spawn_points = PackedVector3Array()
 
@@ -97,7 +97,7 @@ func set_spawn_points_from_nav(
 
 		spawn_points.append(point)
 
-	DotLog.info(CHANNEL, "spawn points taken from navigation", {
+	GSLog.info(CHANNEL, "spawn points taken from navigation", {
 		"map": String(nav.map_id),
 		"points": nav.points.size(),
 		"kept": spawn_points.size(),
@@ -108,13 +108,13 @@ func set_spawn_points_from_nav(
 
 
 ## One player's position and health this tick, called before [method tick]. Health as a fraction, not damage
-## reports: see [DotNpcDirectorStress]; the damage path a game forgets to report from is the one that matters.
+## reports: see [GSNpcDirectorStress]; the damage path a game forgets to report from is the one that matters.
 func report_player(id: StringName, position: Vector3, health_fraction: float) -> void:
 	if not _players.has(id):
-		_players[id] = DotNpcDirectorStress.make(id)
+		_players[id] = GSNpcDirectorStress.make(id)
 
-	(_players[id] as DotNpcDirectorStress).position = position
-	(_players[id] as DotNpcDirectorStress).health_fraction = health_fraction
+	(_players[id] as GSNpcDirectorStress).position = position
+	(_players[id] as GSNpcDirectorStress).health_fraction = health_fraction
 
 
 ## Forgets a player who disconnected or is spectating, stress and all: a director must not build a peak for
@@ -140,9 +140,9 @@ func report_kill(id: StringName) -> void:
 
 
 ## The skill record of a player, made on first use.
-func _skill_of(id: StringName) -> DotNpcDirectorSkill:
+func _skill_of(id: StringName) -> GSNpcDirectorSkill:
 	if not _skills.has(id):
-		_skills[id] = DotNpcDirectorSkill.new()
+		_skills[id] = GSNpcDirectorSkill.new()
 
 	return _skills[id]
 
@@ -161,7 +161,7 @@ func party_travel() -> float:
 	var least := INF
 
 	for id in _players:
-		least = minf(least, (_players[id] as DotNpcDirectorStress).travelled)
+		least = minf(least, (_players[id] as GSNpcDirectorStress).travelled)
 
 	return least
 
@@ -170,6 +170,6 @@ func _distance_to_nearest_player(point: Vector3) -> float:
 	var nearest := INF
 
 	for id in _players:
-		nearest = minf(nearest, point.distance_to((_players[id] as DotNpcDirectorStress).position))
+		nearest = minf(nearest, point.distance_to((_players[id] as GSNpcDirectorStress).position))
 
 	return nearest

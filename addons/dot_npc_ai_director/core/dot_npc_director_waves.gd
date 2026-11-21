@@ -1,4 +1,4 @@
-class_name DotNpcDirectorWaves
+class_name GSNpcDirectorWaves
 extends RefCounted
 
 ## A hold-out's schedule: quiet and horde stretches in order, in style ROUNDS (waves cleared by killing), CYCLE (nights survived by time) or CLOCK (one stretch, harder as it goes).
@@ -29,7 +29,7 @@ signal stage_changed(stage: int, index: int)
 signal finished()
 
 ## A wave or night began, resolved by the [member wave_set] (only when there is one).
-signal wave_started(spec: DotWaveSpec)
+signal wave_started(spec: GSWaveSpec)
 
 # --- The schedule ---------------------------------------------------------------------------
 
@@ -103,10 +103,10 @@ var alive: int = 0
 var players: int = 1
 
 ## The wave set this schedule was built from, or null for the plain formula.
-var wave_set: DotWaveSet = null
+var wave_set: GSWaveSet = null
 
 ## The resolved wave in play (or the last that was), when there is a [member wave_set].
-var spec: DotWaveSpec = null
+var spec: GSWaveSpec = null
 
 var _owed: float = 0.0
 
@@ -117,23 +117,23 @@ var _quiet_own: float = -1.0
 var _first_quiet_pending: bool = false
 
 
-## Builds a schedule from a `waves` profile for [param p_players], its [DotWaveSet] on [member wave_set].
-## [param opts] may hold `npc_exists`, `validate_extra`, `wave_resolved`, `map_key` and `rules` ([DotNpcDirectorRules]).
-static func from_profile(profile: DotProfile, p_difficulty: String = "normal", p_players: int = 1, opts: Dictionary = {}) -> DotResult:
-	var res := DotWaveSet.from_profile(profile, p_difficulty, opts.get("npc_exists", Callable()), opts.get("validate_extra", Callable()))
+## Builds a schedule from a `waves` profile for [param p_players], its [GSWaveSet] on [member wave_set].
+## [param opts] may hold `npc_exists`, `validate_extra`, `wave_resolved`, `map_key` and `rules` ([GSNpcDirectorRules]).
+static func from_profile(profile: GSProfile, p_difficulty: String = "normal", p_players: int = 1, opts: Dictionary = {}) -> GSResult:
+	var res := GSWaveSet.from_profile(profile, p_difficulty, opts.get("npc_exists", Callable()), opts.get("validate_extra", Callable()))
 	if not res.ok:
 		return res
-	var set: DotWaveSet = res.value
+	var set: GSWaveSet = res.value
 	set.wave_resolved = opts.get("wave_resolved", Callable())
 	set.map_key = opts.get("map_key", "")
-	var sched := DotNpcDirectorWaves.new()
+	var sched := GSNpcDirectorWaves.new()
 	set.fill_schedule(sched, maxi(p_players, 1))
 	var check := sched.validate()
 	if not check.ok:
 		return check.wrap("waves/%s" % profile.id)
-	if opts.get("rules") is DotNpcDirectorRules:
+	if opts.get("rules") is GSNpcDirectorRules:
 		set.apply_to_rules(opts["rules"])
-	return DotResult.success(sched)
+	return GSResult.success(sched)
 
 
 ## Enemies alive at once the wave set allows now, or 0 when there is none (the game's own cap).
@@ -143,23 +143,23 @@ func alive_cap() -> int:
 
 ## Checks the schedule. A game calls this before [method begin], with the numbers its
 ## operator set.
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if style < Style.ROUNDS or style > Style.CLOCK:
-		return DotResult.fail(DotError.CODE_INVALID, "style is %d; it is 0 rounds, 1 cycle or 2 clock" % style)
+		return GSResult.fail(GSError.CODE_INVALID, "style is %d; it is 0 rounds, 1 cycle or 2 clock" % style)
 
 	if style != Style.CLOCK and count < 1:
-		return DotResult.fail(DotError.CODE_INVALID, "a hold of %s needs at least one" % ("waves" if style == Style.ROUNDS else "nights"))
+		return GSResult.fail(GSError.CODE_INVALID, "a hold of %s needs at least one" % ("waves" if style == Style.ROUNDS else "nights"))
 
 	if style == Style.CYCLE and horde_seconds <= 0.0:
-		return DotResult.fail(DotError.CODE_INVALID, "a night needs a length")
+		return GSResult.fail(GSError.CODE_INVALID, "a night needs a length")
 
 	if style == Style.ROUNDS and wave_base + wave_per_player <= 0:
-		return DotResult.fail(DotError.CODE_INVALID, "a wave of nobody is not a wave")
+		return GSResult.fail(GSError.CODE_INVALID, "a wave of nobody is not a wave")
 
 	if quiet_seconds < 0.0 or first_quiet_seconds < 0.0 or release_base <= 0.0:
-		return DotResult.fail(DotError.CODE_INVALID, "negative quiet, or a release rate of nothing")
+		return GSResult.fail(GSError.CODE_INVALID, "negative quiet, or a release rate of nothing")
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 ## Starts the hold for [param p_players]. The first stage is the opening quiet, or the first

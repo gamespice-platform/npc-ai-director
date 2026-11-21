@@ -1,10 +1,10 @@
 @tool
-class_name DotNpcDirectorRules
-extends DotConfig
+class_name GSNpcDirectorRules
+extends GSConfig
 
 ## Every number the director is allowed to have an opinion about.
 ##
-## A [DotConfig], so an operator retunes the pacing of a campaign in a file rather than
+## A [GSConfig], so an operator retunes the pacing of a campaign in a file rather than
 ## in a build — which matters more here than anywhere else in this family, because
 ## "is it too hard" is a question that is only ever answered by playing it and then
 ## changing a number.
@@ -37,13 +37,13 @@ extends DotConfig
 
 ## Ceiling on the population whatever the player count says. 0 = the spawner's own (default 60). Negative is refused by [method validate].
 ##
-## Belt and braces over [DotNpcLimits]: the spawner refuses past its budget anyway, but
+## Belt and braces over [GSNpcLimits]: the spawner refuses past its budget anyway, but
 ## a director that keeps asking is a director burning a spawn attempt per tick.
 @export_range(0, 500, 1, "or_greater") var absolute_cap: int = 60
 
 @export_group("Pacing")
 
-## How much stress ends the build-up, 0 to 1. See [DotNpcDirectorStress].
+## How much stress ends the build-up, 0 to 1. See [GSNpcDirectorStress].
 @export_range(0.0, 1.0, 0.01) var peak_stress: float = 0.75
 
 ## Seconds the peak is held once it is reached.
@@ -171,7 +171,7 @@ extends DotConfig
 ## Whether the difficulty multipliers are published. Off = both read 1.0.
 @export var difficulty_enabled: bool = false
 
-## Named preset: easy, normal, hard or nightmare. See [DotNpcDirectorDifficulty].
+## Named preset: easy, normal, hard or nightmare. See [GSNpcDirectorDifficulty].
 @export var difficulty_preset: String = "normal"
 
 ## Numeric dial, 1.0 being normal. Negative = use the preset instead.
@@ -209,50 +209,50 @@ func cli_prefix() -> String:
 	return "--director-"
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if absolute_cap < 0 or spawn_burst < 0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"absolute_cap and spawn_burst may not be negative; 0 means unlimited.",
 			"absolute_cap %d, spawn_burst %d" % [absolute_cap, spawn_burst]
 		)
 
 	if spawn_min_distance >= spawn_max_distance:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"spawn_min_distance is not below spawn_max_distance, so no spawn point can ever be legal.",
 			"%.0f m and %.0f m" % [spawn_min_distance, spawn_max_distance]
 		)
 
 	if relax_per_player > peak_per_player:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"A relax with more enemies than a peak inverts the whole cycle.",
 			"%.1f against %.1f" % [relax_per_player, peak_per_player]
 		)
 
 	if peak_stress <= 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"A peak stress of zero peaks immediately and for ever.",
 			"%.2f" % peak_stress
 		)
 
 	if skill_min > 1.0 or skill_max < 1.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"The skill bounds must straddle 1.0, or a new player is already scaled.",
 			"%.2f to %.2f" % [skill_min, skill_max]
 		)
 
-	if difficulty_enabled and difficulty_dial < 0.0 and not DotNpcDirectorDifficulty.has_preset(difficulty_preset):
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+	if difficulty_enabled and difficulty_dial < 0.0 and not GSNpcDirectorDifficulty.has_preset(difficulty_preset):
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"The difficulty preset is not one of the known names.",
 			difficulty_preset
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func describe_summary() -> String:

@@ -1,4 +1,4 @@
-class_name DotNpcDirectorDifficulty
+class_name GSNpcDirectorDifficulty
 extends RefCounted
 
 ## Maps a difficulty name or dial to the multipliers a host applies to its enemies.
@@ -20,7 +20,7 @@ static func has_preset(name: String) -> bool:
 
 
 ## The dial a rules object selects: its numeric dial if set, else its preset, else 1.0.
-static func dial_of(rules: DotNpcDirectorRules) -> float:
+static func dial_of(rules: GSNpcDirectorRules) -> float:
 	if not rules.difficulty_enabled:
 		return 1.0
 
@@ -31,7 +31,7 @@ static func dial_of(rules: DotNpcDirectorRules) -> float:
 
 
 ## Enemy accuracy multiplier; 1.0 when difficulty is off.
-static func accuracy(rules: DotNpcDirectorRules) -> float:
+static func accuracy(rules: GSNpcDirectorRules) -> float:
 	if not rules.difficulty_enabled:
 		return 1.0
 
@@ -39,7 +39,7 @@ static func accuracy(rules: DotNpcDirectorRules) -> float:
 
 
 ## Enemy damage multiplier; 1.0 when difficulty is off.
-static func damage(rules: DotNpcDirectorRules) -> float:
+static func damage(rules: GSNpcDirectorRules) -> float:
 	if not rules.difficulty_enabled:
 		return 1.0
 

@@ -1,4 +1,4 @@
-class_name DotNpcDirectorStress
+class_name GSNpcDirectorStress
 extends RefCounted
 
 ## How hard one player is having it, 0 to 1. What the whole pacing cycle turns on.
@@ -32,7 +32,7 @@ var value: float = 0.0
 
 ## How far this player has travelled since the director last reset it, in metres.
 ##
-## What [member DotNpcDirectorRules.relax_distance] is measured against, and it is
+## What [member GSNpcDirectorRules.relax_distance] is measured against, and it is
 ## measured per player rather than for the party: a team that split up has one person
 ## making progress and the director should notice.
 var travelled: float = 0.0
@@ -53,8 +53,8 @@ var _last_position: Vector3 = Vector3.ZERO
 var _seeded: bool = false
 
 
-static func make(p_id: StringName) -> DotNpcDirectorStress:
-	var stress := DotNpcDirectorStress.new()
+static func make(p_id: StringName) -> GSNpcDirectorStress:
+	var stress := GSNpcDirectorStress.new()
 	stress.id = p_id
 	return stress
 
@@ -64,7 +64,7 @@ static func make(p_id: StringName) -> DotNpcDirectorStress:
 ## [param threats] is how many enemies are within the rules' threat radius — counted by
 ## the director, because it is the thing that has the population.
 func advance(
-	rules: DotNpcDirectorRules,
+	rules: GSNpcDirectorRules,
 	p_position: Vector3,
 	p_health_fraction: float,
 	threats: int,

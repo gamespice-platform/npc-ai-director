@@ -6,7 +6,7 @@ extends SceneTree
 
 
 func _init() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	var game := ""
 	var roots := PackedStringArray()
 	var check_npcs := false
@@ -19,8 +19,8 @@ func _init() -> void:
 		elif a == "--check-npcs":
 			check_npcs = true
 
-	var profiles := DotWaveSet.make_set(game, roots)
-	var npcs := DotNpcProfiles.make_set(game, roots) if check_npcs else null
+	var profiles := GSWaveSet.make_set(game, roots)
+	var npcs := GSNpcProfiles.make_set(game, roots) if check_npcs else null
 	var exists := Callable()
 
 	if npcs != null:
@@ -46,7 +46,7 @@ func _init() -> void:
 			bad[loaded.error.message] = names
 		else:
 			for d in names:
-				var res := DotWaveSet.from_profile(loaded.value, d, exists)
+				var res := GSWaveSet.from_profile(loaded.value, d, exists)
 
 				if not res.ok:
 					bad[res.error.message] = bad.get(res.error.message, []) + [d]

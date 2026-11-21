@@ -18,7 +18,7 @@ var _completed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.FATAL)
+	GSLog.set_level(GSLog.Level.FATAL)
 	_run.call_deferred()
 
 
@@ -71,30 +71,30 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 		print("  FAIL  %s" % _failures[-1])
 
 
-func _load(id: String, roots: Array = GOOD, difficulty := "normal", cmdline: Array = [], npc_exists := Callable(), validate_extra := Callable()) -> DotResult:
-	var profiles := DotWaveSet.make_set("testgame", PackedStringArray(roots), PackedStringArray(cmdline))
-	return DotWaveSet.load_set(profiles, id, difficulty, npc_exists, validate_extra)
+func _load(id: String, roots: Array = GOOD, difficulty := "normal", cmdline: Array = [], npc_exists := Callable(), validate_extra := Callable()) -> GSResult:
+	var profiles := GSWaveSet.make_set("testgame", PackedStringArray(roots), PackedStringArray(cmdline))
+	return GSWaveSet.load_set(profiles, id, difficulty, npc_exists, validate_extra)
 
 
-func _wset(id: String, roots: Array = GOOD, difficulty := "normal", cmdline: Array = []) -> DotWaveSet:
+func _wset(id: String, roots: Array = GOOD, difficulty := "normal", cmdline: Array = []) -> GSWaveSet:
 	var res := _load(id, roots, difficulty, cmdline)
 	if not res.ok:
 		print("  load of %s failed: %s" % [id, res.error.message])
-		return DotWaveSet.new()
+		return GSWaveSet.new()
 	return res.value
 
 
 func _test_parse() -> void:
 	_section("parse")
-	_check(DotWaveSet.profile_schemas()["waves"]["schema"].size() == DotWaveSet.schema().size(), "profile_check finds the waves kind")
+	_check(GSWaveSet.profile_schemas()["waves"]["schema"].size() == GSWaveSet.schema().size(), "profile_check finds the waves kind")
 	var s := _wset("school_hold")
-	_check(s.id == "school_hold" and s.count == 10 and s.style == DotNpcDirectorWaves.Style.ROUNDS, "the game's set loads with its count and style")
+	_check(s.id == "school_hold" and s.count == 10 and s.style == GSNpcDirectorWaves.Style.ROUNDS, "the game's set loads with its count and style")
 	_check(s.pool == {"common": 10.0, "tg_common": 10.0, "tg_crawler": 2.0}, "the pool merges over the hold set it extends", str(s.pool))
 	_check(s.chain == PackedStringArray(["school_hold", "hold"]), "the extends chain is kept", str(s.chain))
 	_check(s.sources.size() == 2, "each layer's source is listed", str(s.sources))
 
 	var hold := _wset("hold")
-	var plain := DotNpcDirectorWaves.new()
+	var plain := GSNpcDirectorWaves.new()
 	var same := true
 	for players in [1, 2, 4]:
 		for k in range(1, 11):
@@ -103,7 +103,7 @@ func _test_parse() -> void:
 	_check(hold.release_base == plain.release_base and hold.overtime_seconds == plain.overtime_seconds and hold.first_quiet == plain.first_quiet_seconds and hold.growth_accel == plain.growth_accel, "and its release, overtime, quiet and growth numbers")
 	_check(hold.alive_cap(3) == 36, "alive cap is base plus per player", str(hold.alive_cap(3)))
 
-	var res := DotNpcDirectorWaves.from_profile(DotWaveSet.make_set("testgame", PackedStringArray(GOOD)).load_profile("school_hold").value, "normal", 3)
+	var res := GSNpcDirectorWaves.from_profile(GSWaveSet.make_set("testgame", PackedStringArray(GOOD)).load_profile("school_hold").value, "normal", 3)
 	_check(res.ok and res.value.wave_set != null and res.value.players == 3, "from_profile returns a schedule bound to its set")
 	_done()
 
@@ -122,7 +122,7 @@ func _test_ranges() -> void:
 	_check(w8.size == 40 and w8.specials.has("tg_spitter"), "a number applies over the range that covers it and keeps the range's other keys", str(w8.to_dictionary()))
 	_check(w8.pool.get("tg_rider") == 2.0 and w8.pool.get("tg_common") == 10.0, "'+id' adds to the pool instead of replacing it", str(w8.pool))
 	_check(s.resolve(3, 1).pool == {"tg_common": 8.0, "tg_crawler": 3.0, "tg_sprinter": 2.0}, "a plain pool replaces the set's", str(s.resolve(3, 1).pool))
-	_check(s.resolve(2, 1).size == DotNpcDirectorWaves.new().wave_size(2, 1) and s.resolve(2, 4).size > s.resolve(2, 1).size, "a wave with no entry comes from the formula and grows with players")
+	_check(s.resolve(2, 1).size == GSNpcDirectorWaves.new().wave_size(2, 1) and s.resolve(2, 4).size > s.resolve(2, 1).size, "a wave with no entry comes from the formula and grows with players")
 	_check(s.resolve(1, 1).release == 1.0 and s.quiet_of(1) == 5.0 and s.quiet_of(2) == -1.0, "per-wave release and quiet are carried; others inherit")
 	_done()
 
@@ -162,7 +162,7 @@ func _test_extra() -> void:
 	_section("extra passthrough and hooks")
 	var s := _wset("school_hold")
 	_check(s.extra == {"tg": {"twists": true, "breather": "patch_up"}}, "extra reaches the set untouched", str(s.extra))
-	s.wave_resolved = func(spec: DotWaveSpec) -> DotWaveSpec:
+	s.wave_resolved = func(spec: GSWaveSpec) -> GSWaveSpec:
 		if spec.extra.get("tg", {}).get("twists", false):
 			spec.announce = "twist %d" % spec.index
 			spec.size += 1
@@ -170,17 +170,17 @@ func _test_extra() -> void:
 	var plain := _wset("school_hold").resolve(4, 1)
 	var hooked := s.resolve(4, 1)
 	_check(hooked.announce == "twist 4" and hooked.size == plain.size + 1, "wave_resolved can adjust a wave from extra")
-	s.wave_resolved = func(_spec: DotWaveSpec): return null
+	s.wave_resolved = func(_spec: GSWaveSpec): return null
 	_check(s.resolve(4, 1).size == plain.size, "a hook that returns nothing keeps the resolved wave")
 
-	var check := func(e: Dictionary) -> DotResult:
+	var check := func(e: Dictionary) -> GSResult:
 		for k in e.get("tg", {}):
 			if not ["twists", "breather", "fog"].has(k):
-				return DotResult.fail(DotError.CODE_INVALID, "extra.tg: unknown key '%s'" % k)
-		return DotResult.success(null)
+				return GSResult.fail(GSError.CODE_INVALID, "extra.tg: unknown key '%s'" % k)
+		return GSResult.success(null)
 	_check(_load("school_hold", GOOD, "normal", [], Callable(), check).ok, "validate_extra accepts the game's own keys, in the set and in an entry")
 	var bad := _load("extra_typo", BAD, "normal", [], Callable(), check)
-	_check(not bad.ok and bad.error.code == DotError.CODE_INVALID and "twistz" in bad.error.message, "and refuses a typo with CODE_INVALID", bad.error.message if not bad.ok else "")
+	_check(not bad.ok and bad.error.code == GSError.CODE_INVALID and "twistz" in bad.error.message, "and refuses a typo with CODE_INVALID", bad.error.message if not bad.ok else "")
 	_done()
 
 
@@ -216,20 +216,20 @@ func _test_refused() -> void:
 
 
 func _drive(id: String, count: int) -> Array:
-	var profiles := DotWaveSet.make_set("testgame", PackedStringArray(GOOD), PackedStringArray(["--profile.waves/%s.count=%d" % [id, count]]))
-	var res := DotNpcDirectorWaves.from_profile(profiles.load_profile(id).value, "normal", 2, {"map_key": "m1"})
-	var sched: DotNpcDirectorWaves = res.value
+	var profiles := GSWaveSet.make_set("testgame", PackedStringArray(GOOD), PackedStringArray(["--profile.waves/%s.count=%d" % [id, count]]))
+	var res := GSNpcDirectorWaves.from_profile(profiles.load_profile(id).value, "normal", 2, {"map_key": "m1"})
+	var sched: GSNpcDirectorWaves = res.value
 	var log: Array = []
-	sched.wave_started.connect(func(spec: DotWaveSpec): log.append("%d:%d:%s" % [spec.index, spec.size, ",".join(PackedStringArray(spec.pool.keys()))]))
+	sched.wave_started.connect(func(spec: GSWaveSpec): log.append("%d:%d:%s" % [spec.index, spec.size, ",".join(PackedStringArray(spec.pool.keys()))]))
 	sched.finished.connect(func(): log.append("finished"))
 	sched.begin(2)
 	var alive := 0
 	for i in 4000:
 		alive += sched.take(100)
-		if sched.stage == DotNpcDirectorWaves.Stage.HORDE and sched.sent >= sched.budget:
+		if sched.stage == GSNpcDirectorWaves.Stage.HORDE and sched.sent >= sched.budget:
 			alive = 0
 		sched.tick(0.5, alive, 2)
-		if sched.stage == DotNpcDirectorWaves.Stage.DONE:
+		if sched.stage == GSNpcDirectorWaves.Stage.DONE:
 			break
 	log.append(sched.wave_set.reached.duplicate())
 	return log
@@ -247,7 +247,7 @@ func _test_determinism() -> void:
 	var run2 := _drive("school_hold", 3)
 	_check(run1 == run2, "a whole run of the schedule is reproducible", str(run1))
 	_check(run1.size() == 5 and run1[0].begins_with("1:") and run1[3] == "finished", "three waves start in order and then it finishes", str(run1))
-	_check(run1[1].begins_with("2:") and int(run1[1].split(":")[1]) == DotNpcDirectorWaves.new().wave_size(2, 2), "the schedule sizes a wave from the set", run1[1])
+	_check(run1[1].begins_with("2:") and int(run1[1].split(":")[1]) == GSNpcDirectorWaves.new().wave_size(2, 2), "the schedule sizes a wave from the set", run1[1])
 	_check(run1[0].ends_with("tg_common") and not run1[2].ends_with("tg_common"), "wave 1 uses its own pool and the last wave its own", str(run1))
 	var hard := _wset("school_hold", GOOD, "hard")
 	var easy := _wset("school_hold", GOOD, "easy")
@@ -259,16 +259,16 @@ func _test_determinism() -> void:
 
 func _test_map_progress() -> void:
 	_section("map-cycle progress signal")
-	var profiles := DotWaveSet.make_set("testgame", PackedStringArray(GOOD), PackedStringArray(["--profile.waves/school_hold.count=2"]))
+	var profiles := GSWaveSet.make_set("testgame", PackedStringArray(GOOD), PackedStringArray(["--profile.waves/school_hold.count=2"]))
 	var seen: Array = []
-	var res := DotNpcDirectorWaves.from_profile(profiles.load_profile("school_hold").value, "normal", 1, {"map_key": "school"})
-	var sched: DotNpcDirectorWaves = res.value
+	var res := GSNpcDirectorWaves.from_profile(profiles.load_profile("school_hold").value, "normal", 1, {"map_key": "school"})
+	var sched: GSNpcDirectorWaves = res.value
 	sched.wave_set.progress.connect(func(key: String, wave: int, count: int, done: bool): seen.append([key, wave, count, done]))
 	sched.begin(1)
 	for i in 4000:
 		var got := sched.take(100)
 		sched.tick(0.5, 0 if sched.sent >= sched.budget else got, 1)
-		if sched.stage == DotNpcDirectorWaves.Stage.DONE:
+		if sched.stage == GSNpcDirectorWaves.Stage.DONE:
 			break
 	_check(seen == [["school", 1, 2, false], ["school", 2, 2, false], ["school", 2, 2, true]], "wave starts and the finish are signalled with the map key", str(seen))
 	_check(sched.wave_set.progress_of("school") == 1.0 and sched.wave_set.progress_of("mall") == 0.0, "progress is kept per map key")
@@ -282,13 +282,13 @@ func _test_map_progress() -> void:
 func _test_director_hookup() -> void:
 	_section("hookup to the director's rules")
 	var s := _wset("school_hold", GOOD, "hard")
-	var rules := DotNpcDirectorRules.new()
+	var rules := GSNpcDirectorRules.new()
 	_check(not _wset("hold").apply_to_rules(rules) and not rules.skill_enabled and not rules.specials_enabled, "a pure schedule leaves the rules alone")
 	_check(s.apply_to_rules(rules) and rules.skill_enabled and rules.specials_enabled and rules.special_budget_cap == 2, "director: switches on skill and sets the specials budget")
-	_check(rules.difficulty_enabled and rules.difficulty_preset == "hard" and DotNpcDirectorDifficulty.dial_of(rules) == 1.5, "the difficulty name feeds the existing preset")
+	_check(rules.difficulty_enabled and rules.difficulty_preset == "hard" and GSNpcDirectorDifficulty.dial_of(rules) == 1.5, "the difficulty name feeds the existing preset")
 	_check(s.skilled_size(20, 5.0, rules) == 26 and s.skilled_size(20, 0.1, rules) == 14 and s.skilled_size(20, 1.0, rules) == 20, "skill moves a fixed wave only within skill_min..skill_max (20 stays 14 to 26)")
 	var spec := s.resolve(7, 1)
-	_check(DotWaveSet.specials_within_budget(spec, 1.4) == {"tg_spitter": 1} and DotWaveSet.specials_within_budget(spec, 0.9).is_empty() and DotWaveSet.specials_within_budget(spec, 5.0).size() == 2, "a wave's specials are what the budget allows, not more", str(DotWaveSet.specials_within_budget(spec, 1.4)))
+	_check(GSWaveSet.specials_within_budget(spec, 1.4) == {"tg_spitter": 1} and GSWaveSet.specials_within_budget(spec, 0.9).is_empty() and GSWaveSet.specials_within_budget(spec, 5.0).size() == 2, "a wave's specials are what the budget allows, not more", str(GSWaveSet.specials_within_budget(spec, 1.4)))
 	var off := _wset("school_hold")
 	off.director = {"skill": false}
 	_check(off.skilled_size(20, 1.3, rules) == 20, "'skill: false' makes fixed sizes exact")

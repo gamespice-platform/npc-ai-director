@@ -18,7 +18,7 @@ var _world: Node3D = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -55,64 +55,64 @@ func _run() -> void:
 
 func _test_stuck_rescue() -> void:
 	_section("stuck infected: repath, then relocate; progress and fights are not stuck")
-	var r := DotNpcStuckRescue.new()
+	var r := GSNpcStuckRescue.new()
 	_check(r.due(1, 0.0), "an unseen NPC is due at once")
-	_check(r.observe(1, 40.0, 0.0) == DotNpcStuckRescue.NONE and not r.due(1, 0.5) and r.due(1, 1.0), "checks are spaced by the interval")
+	_check(r.observe(1, 40.0, 0.0) == GSNpcStuckRescue.NONE and not r.due(1, 0.5) and r.due(1, 1.0), "checks are spaced by the interval")
 	var t := 0.0
 	var seen := []
 	while t < 14.0:
 		t += 1.0
 		var a := r.observe(1, 40.0, t)
-		if a != DotNpcStuckRescue.NONE:
+		if a != GSNpcStuckRescue.NONE:
 			seen.append([t, a])
-	_check(seen.size() >= 2 and seen[0] == [6.0, DotNpcStuckRescue.REPATH], "no progress for 6 s: a repath first")
-	_check(seen[1] == [14.0, DotNpcStuckRescue.RELOCATE], "then a relocation at 14 s")
+	_check(seen.size() >= 2 and seen[0] == [6.0, GSNpcStuckRescue.REPATH], "no progress for 6 s: a repath first")
+	_check(seen[1] == [14.0, GSNpcStuckRescue.RELOCATE], "then a relocation at 14 s")
 	_check(r.repaths == 1 and r.relocations == 1, "the counts say so")
 	var again := 0
 	for i in 5:
 		t += 1.0
-		if r.observe(1, 40.0, t) != DotNpcStuckRescue.NONE:
+		if r.observe(1, 40.0, t) != GSNpcStuckRescue.NONE:
 			again += 1
 	_check(again == 0, "relocating restarts the clock")
-	var rm := DotNpcStuckRescue.new()
+	var rm := GSNpcStuckRescue.new()
 	var acts := []
 	for i in 80:
 		var a2 := rm.observe(9, 40.0, float(i + 1))
-		if a2 == DotNpcStuckRescue.RELOCATE or a2 == DotNpcStuckRescue.REMOVE:
+		if a2 == GSNpcStuckRescue.RELOCATE or a2 == GSNpcStuckRescue.REMOVE:
 			acts.append(a2)
-	_check(acts.size() >= 3 and acts[0] == DotNpcStuckRescue.RELOCATE and acts[1] == DotNpcStuckRescue.RELOCATE and acts[2] == DotNpcStuckRescue.REMOVE and rm.removals >= 1, "two relocations that change nothing, then it is removed")
-	var p := DotNpcStuckRescue.new()
+	_check(acts.size() >= 3 and acts[0] == GSNpcStuckRescue.RELOCATE and acts[1] == GSNpcStuckRescue.RELOCATE and acts[2] == GSNpcStuckRescue.REMOVE and rm.removals >= 1, "two relocations that change nothing, then it is removed")
+	var p := GSNpcStuckRescue.new()
 	p.observe(2, 40.0, 0.0)
 	var acted := false
 	for i in 40:
-		if p.observe(2, 40.0 - float(i) * 1.5, float(i + 1)) != DotNpcStuckRescue.NONE:
+		if p.observe(2, 40.0 - float(i) * 1.5, float(i + 1)) != GSNpcStuckRescue.NONE:
 			acted = true
 	_check(not acted, "closing in is progress")
-	var f := DotNpcStuckRescue.new()
+	var f := GSNpcStuckRescue.new()
 	f.observe(3, 2.0, 0.0)
 	var fought := false
 	for i in 30:
-		if f.observe(3, 2.0, float(i + 1)) != DotNpcStuckRescue.NONE:
+		if f.observe(3, 2.0, float(i + 1)) != GSNpcStuckRescue.NONE:
 			fought = true
 	_check(not fought, "within reach of a survivor is a fight, not a stall")
-	var low := DotNpcStuckRescue.new()
+	var low := GSNpcStuckRescue.new()
 	low.observe(4, 50.0, 0.0)
 	var first := -1.0
 	for i in 20:
-		if low.observe(4, 50.0, float(i + 1), 3) == DotNpcStuckRescue.REPATH:
+		if low.observe(4, 50.0, float(i + 1), 3) == GSNpcStuckRescue.REPATH:
 			first = float(i + 1)
 			break
 	_check(first > 0.0 and first <= 2.5, "with few left the waits shrink to a third (repath at %.0f s)" % first)
-	var wander := DotNpcStuckRescue.new()
+	var wander := GSNpcStuckRescue.new()
 	wander.observe(5, 40.0, 0.0)
 	var circled := false
 	for i in 12:
-		if wander.observe(5, 40.0 + float(i % 2) * 3.0, float(i + 1)) == DotNpcStuckRescue.REPATH:
+		if wander.observe(5, 40.0 + float(i % 2) * 3.0, float(i + 1)) == GSNpcStuckRescue.REPATH:
 			circled = true
 	_check(circled, "moving without getting closer still counts as stuck")
 	r.forget(1)
 	_check(r.due(1, 99.0) and r.describe()["tracked"] == 0, "forgotten NPCs are gone")
-	var gone := DotNpcStuckRescue.new()
+	var gone := GSNpcStuckRescue.new()
 	gone.observe(6, 30.0, 0.0)
 	gone.clear()
 	_check(gone.describe()["tracked"] == 0, "clear empties it")
@@ -139,16 +139,16 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 		print("  FAIL  %s" % _failures[-1])
 
 
-func _spawner() -> DotNpcSpawner:
-	var cat := DotNpcCatalogue.new()
+func _spawner() -> GSNpcSpawner:
+	var cat := GSNpcCatalogue.new()
 	for id in [&"zombie", &"brute"]:
-		var def := DotNpcDef.make(id, BODY)
+		var def := GSNpcDef.make(id, BODY)
 		def.require_line_of_sight = false
 		cat.add(def)
 
-	var spawner := DotNpcSpawner.new()
+	var spawner := GSNpcSpawner.new()
 	spawner.catalogue = cat
-	var limits := DotNpcLimits.new()
+	var limits := GSNpcLimits.new()
 	limits.spawn_interval = 0.0
 	limits.require_navigable_spawn = false
 	limits.world_budget = 0
@@ -160,8 +160,8 @@ func _spawner() -> DotNpcSpawner:
 	return spawner
 
 
-func _rules() -> DotNpcDirectorRules:
-	var rules := DotNpcDirectorRules.new()
+func _rules() -> GSNpcDirectorRules:
+	var rules := GSNpcDirectorRules.new()
 	rules.spawn_out_of_sight = false
 	rules.spawn_interval = 0.0
 	rules.peak_stress = 0.3
@@ -171,8 +171,8 @@ func _rules() -> DotNpcDirectorRules:
 	return rules
 
 
-func _director(rules: DotNpcDirectorRules, population: Array[StringName] = [&"zombie"]) -> DotNpcDirector:
-	var director := DotNpcDirector.new()
+func _director(rules: GSNpcDirectorRules, population: Array[StringName] = [&"zombie"]) -> GSNpcDirector:
+	var director := GSNpcDirector.new()
 	director.spawner = _spawner()
 	director.rules = rules
 	director.population = population
@@ -184,13 +184,13 @@ func _director(rules: DotNpcDirectorRules, population: Array[StringName] = [&"zo
 	return director
 
 
-func _drop(director: DotNpcDirector) -> void:
+func _drop(director: GSNpcDirector) -> void:
 	director.spawner.queue_free()
 	director.queue_free()
 
 
 ## One player for [param seconds]; every 6 s they lose [param loss] of their health and recover.
-func _play(director: DotNpcDirector, seconds: float, loss: float, deaths_per_minute: float = 0.0) -> Array[float]:
+func _play(director: GSNpcDirector, seconds: float, loss: float, deaths_per_minute: float = 0.0) -> Array[float]:
 	var seen: Array[float] = []
 	var t := 0.0
 	var next_death := 0.0
@@ -262,38 +262,38 @@ func _test_team_pressure() -> void:
 
 
 ## The population the director would want at a sustained peak.
-func _peak_population(director: DotNpcDirector) -> int:
-	director._phase = DotNpcDirector.Phase.SUSTAIN
+func _peak_population(director: GSNpcDirector) -> int:
+	director._phase = GSNpcDirector.Phase.SUSTAIN
 	return director.target_population()
 
 
 func _test_difficulty() -> void:
 	_section("difficulty")
 
-	var rules := DotNpcDirectorRules.new()
-	_check(DotNpcDirectorDifficulty.accuracy(rules) == 1.0 and DotNpcDirectorDifficulty.damage(rules) == 1.0,
+	var rules := GSNpcDirectorRules.new()
+	_check(GSNpcDirectorDifficulty.accuracy(rules) == 1.0 and GSNpcDirectorDifficulty.damage(rules) == 1.0,
 		"off by default, both multipliers read 1.0")
 	rules.difficulty_enabled = true
 	var seen: Array[float] = []
 	for name in ["easy", "normal", "hard", "nightmare"]:
 		rules.difficulty_preset = name
-		seen.append(DotNpcDirectorDifficulty.accuracy(rules))
+		seen.append(GSNpcDirectorDifficulty.accuracy(rules))
 	_check(seen[1] == 1.0 and seen[0] < seen[1] and seen[1] < seen[2] and seen[2] < seen[3],
 		"presets rise easy, normal, hard, nightmare, and normal is 1.0", str(seen))
 	rules.difficulty_preset = "hard"
-	_check(is_equal_approx(DotNpcDirectorDifficulty.accuracy(rules), 1.125)
-		and is_equal_approx(DotNpcDirectorDifficulty.damage(rules), 1.15), "hard maps to 1.125 accuracy and 1.15 damage")
+	_check(is_equal_approx(GSNpcDirectorDifficulty.accuracy(rules), 1.125)
+		and is_equal_approx(GSNpcDirectorDifficulty.damage(rules), 1.15), "hard maps to 1.125 accuracy and 1.15 damage")
 	rules.difficulty_dial = 2.0
-	_check(is_equal_approx(DotNpcDirectorDifficulty.accuracy(rules), 1.25), "a numeric dial overrides the preset")
+	_check(is_equal_approx(GSNpcDirectorDifficulty.accuracy(rules), 1.25), "a numeric dial overrides the preset")
 	rules.difficulty_dial = 0.0
-	_check(DotNpcDirectorDifficulty.accuracy(rules) < 1.0 and DotNpcDirectorDifficulty.accuracy(rules) >= 0.1,
+	_check(GSNpcDirectorDifficulty.accuracy(rules) < 1.0 and GSNpcDirectorDifficulty.accuracy(rules) >= 0.1,
 		"a dial of zero is a floor, not zero")
 	rules.difficulty_dial = -1.0
 	rules.difficulty_preset = "bogus"
 	_check(not rules.validate().ok, "an unknown preset is refused")
-	var configured := DotNpcDirectorRules.new()
+	var configured := GSNpcDirectorRules.new()
 	configured.apply_dictionary({"difficulty_enabled": true, "difficulty_preset": "easy"})
-	_check(DotNpcDirectorDifficulty.accuracy(configured) < 1.0, "and it is set from a config dictionary")
+	_check(GSNpcDirectorDifficulty.accuracy(configured) < 1.0, "and it is set from a config dictionary")
 	_done()
 
 
@@ -320,12 +320,12 @@ func _test_specials() -> void:
 	_play(limited, 25.0, 0.0)
 	for npc in limited.spawner.all_npcs():
 		if npc.def.id == &"zombie":
-			limited.spawner.remove(npc.instance_id, DotNpcSpawner.REASON_RECLAIMED)
+			limited.spawner.remove(npc.instance_id, GSNpcSpawner.REASON_RECLAIMED)
 	_play(limited, 1.0, 0.0)
 	brutes = limited.spawner.count_of(&"brute")
 	_check(brutes == 3, "one more is earned per cooldown", "%d after 36 s" % brutes)
 
-	var capped_rules := rules.clone() as DotNpcDirectorRules
+	var capped_rules := rules.clone() as GSNpcDirectorRules
 	capped_rules.special_budget_cap = 20
 	capped_rules.special_max_alive = 1
 	var capped := _director(capped_rules, population)
@@ -333,7 +333,7 @@ func _test_specials() -> void:
 	_play(capped, 10.0, 0.0)
 	_check(capped.spawner.count_of(&"brute") == 1, "special_max_alive limits specials standing at once")
 
-	var free_rules := rules.clone() as DotNpcDirectorRules
+	var free_rules := rules.clone() as GSNpcDirectorRules
 	free_rules.specials_enabled = false
 	var free := _director(free_rules, population)
 	_ready_director(free)
@@ -345,12 +345,12 @@ func _test_specials() -> void:
 	_done()
 
 
-func _ready_director(director: DotNpcDirector) -> void:
+func _ready_director(director: GSNpcDirector) -> void:
 	director._specials.reset(director.rules)
 
 
 ## Everything the director produces over a fixed history, as one string.
-func _trace(rules: DotNpcDirectorRules) -> String:
+func _trace(rules: GSNpcDirectorRules) -> String:
 	var population: Array[StringName] = [&"zombie", &"brute"]
 	var director := _director(rules, population)
 	_ready_director(director)
@@ -397,7 +397,7 @@ func _test_determinism() -> void:
 	rules.specials_enabled = true
 	rules.special_kinds = [&"brute"]
 	var first := _trace(rules)
-	var second := _trace(rules.clone() as DotNpcDirectorRules)
+	var second := _trace(rules.clone() as GSNpcDirectorRules)
 	_check(first == second, "the same history gives the same result twice", "%s | %s" % [first, second])
 
 	var director := _director(rules)

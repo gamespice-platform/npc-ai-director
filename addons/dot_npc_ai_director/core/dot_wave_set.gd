@@ -1,8 +1,8 @@
-class_name DotWaveSet
+class_name GSWaveSet
 extends RefCounted
 
-## A hold-out's waves as config: one `waves` profile resolved to a [DotWaveSpec] per wave.
-## A wave with no entry is generated from the formula in [DotNpcDirectorWaves]. Design: docs/waves.md.
+## A hold-out's waves as config: one `waves` profile resolved to a [GSWaveSpec] per wave.
+## A wave with no entry is generated from the formula in [GSNpcDirectorWaves]. Design: docs/waves.md.
 
 const ADDON := "dot_npc_ai_director"
 const KIND := "waves"
@@ -28,7 +28,7 @@ const SUB := {
 signal progress(map_key: String, wave: int, count: int, done: bool)
 
 var id := ""
-var style: int = DotNpcDirectorWaves.Style.ROUNDS
+var style: int = GSNpcDirectorWaves.Style.ROUNDS
 var count: int = 10
 var first_quiet: float = 30.0
 var quiet: float = 30.0
@@ -70,10 +70,10 @@ var sources := PackedStringArray()
 var chain := PackedStringArray()
 var overrides := PackedStringArray()
 
-## The game's adjustment of a wave after resolution: `func(spec: DotWaveSpec) -> DotWaveSpec`.
+## The game's adjustment of a wave after resolution: `func(spec: GSWaveSpec) -> GSWaveSpec`.
 var wave_resolved: Callable = Callable()
 
-## The game's check of an `extra:` block: `func(extra: Dictionary) -> DotResult`.
+## The game's check of an `extra:` block: `func(extra: Dictionary) -> GSResult`.
 var validate_extra: Callable = Callable()
 
 ## Names the map in play for [signal progress]; the game sets it at map start.
@@ -90,7 +90,7 @@ var _has_last := false
 
 ## The fields of a `waves` profile.
 static func schema() -> Array:
-	var f := DotProfileSet.field
+	var f := GSProfileSet.field
 	return [
 		f.call("style", "string", "rounds", {"enum": STYLES}),
 		f.call("count", "int", 10, {"min": 1, "max": 1000}),
@@ -111,15 +111,15 @@ static func profile_schemas() -> Dictionary:
 
 
 ## The profile set for a game's wave sets (`cfg/game/<game>/waves/<id>.yml` over the addon's).
-static func make_set(game: String, roots: PackedStringArray = PackedStringArray(), cmdline: PackedStringArray = PackedStringArray()) -> DotProfileSet:
-	var s := DotProfileSet.create(ADDON, game, KIND, schema())
+static func make_set(game: String, roots: PackedStringArray = PackedStringArray(), cmdline: PackedStringArray = PackedStringArray()) -> GSProfileSet:
+	var s := GSProfileSet.create(ADDON, game, KIND, schema())
 	s.roots = roots
 	s.cmdline = cmdline
 	return s
 
 
-## Loads wave set [param set_id] and builds it. Value: a [DotWaveSet]. See [method from_profile].
-static func load_set(profiles: DotProfileSet, set_id: String, p_difficulty: String = "normal", npc_exists: Callable = Callable(), p_validate_extra: Callable = Callable()) -> DotResult:
+## Loads wave set [param set_id] and builds it. Value: a [GSWaveSet]. See [method from_profile].
+static func load_set(profiles: GSProfileSet, set_id: String, p_difficulty: String = "normal", npc_exists: Callable = Callable(), p_validate_extra: Callable = Callable()) -> GSResult:
 	var res := profiles.load_profile(set_id)
 	if not res.ok:
 		return res
@@ -128,8 +128,8 @@ static func load_set(profiles: DotProfileSet, set_id: String, p_difficulty: Stri
 
 ## Builds and validates a set from a loaded profile. Every problem is reported together as one
 ## [code]CODE_INVALID[/code]; [param npc_exists] is `func(id: String) -> bool` and is only asked when valid.
-static func from_profile(profile: DotProfile, p_difficulty: String = "normal", npc_exists: Callable = Callable(), p_validate_extra: Callable = Callable()) -> DotResult:
-	var s := DotWaveSet.new()
+static func from_profile(profile: GSProfile, p_difficulty: String = "normal", npc_exists: Callable = Callable(), p_validate_extra: Callable = Callable()) -> GSResult:
+	var s := GSWaveSet.new()
 	s.id = profile.id
 	s.sources = profile.sources
 	s.chain = profile.chain
@@ -137,15 +137,15 @@ static func from_profile(profile: DotProfile, p_difficulty: String = "normal", n
 	s.validate_extra = p_validate_extra
 	var errs := s._load(profile, p_difficulty, npc_exists)
 	if not errs.is_empty():
-		return DotResult.fail(DotError.CODE_INVALID, "waves/%s: %s" % [profile.id, "; ".join(errs)])
+		return GSResult.fail(GSError.CODE_INVALID, "waves/%s: %s" % [profile.id, "; ".join(errs)])
 	for w in s.warnings:
-		DotLog.warn(CHANNEL, w, {"set": s.id})
-	return DotResult.success(s)
+		GSLog.warn(CHANNEL, w, {"set": s.id})
+	return GSResult.success(s)
 
 
 ## The first wave number that is the set's last.
 func last_index() -> int:
-	return 1 if style == DotNpcDirectorWaves.Style.CLOCK else count
+	return 1 if style == GSNpcDirectorWaves.Style.CLOCK else count
 
 
 ## Enemies alive at once the set allows for [param players].
@@ -154,20 +154,20 @@ func alive_cap(players: int) -> int:
 
 
 ## Wave [param k] for [param players] players, after the game's [member wave_resolved] hook.
-func resolve(k: int, players: int) -> DotWaveSpec:
+func resolve(k: int, players: int) -> GSWaveSpec:
 	var spec := resolve_raw(k, players)
 	if wave_resolved.is_valid():
 		var out: Variant = wave_resolved.call(spec)
-		if out is DotWaveSpec:
+		if out is GSWaveSpec:
 			return out
-		DotLog.warn(CHANNEL, "wave_resolved returned no spec; keeping the resolved one", {"set": id, "wave": k})
+		GSLog.warn(CHANNEL, "wave_resolved returned no spec; keeping the resolved one", {"set": id, "wave": k})
 	return spec
 
 
 ## Wave [param k] as the file says it, no hook. Deterministic in (k, players).
-func resolve_raw(k: int, players: int) -> DotWaveSpec:
+func resolve_raw(k: int, players: int) -> GSWaveSpec:
 	var e := _entry(k)
-	var spec := DotWaveSpec.new()
+	var spec := GSWaveSpec.new()
 	spec.index = k
 	spec.is_last = k >= last_index()
 	spec.pool = e["pool"]
@@ -181,7 +181,7 @@ func resolve_raw(k: int, players: int) -> DotWaveSpec:
 	spec.reward_mult = mult["reward"]
 	spec.health_mult = e.get("health_mult", 1.0) * mult["health"]
 	spec.speed_mult = e.get("speed_mult", 1.0) * mult["speed"]
-	if style == DotNpcDirectorWaves.Style.ROUNDS:
+	if style == GSNpcDirectorWaves.Style.ROUNDS:
 		var n: int
 		if e.has("size"):
 			n = e["size"]
@@ -199,7 +199,7 @@ func quiet_of(k: int) -> float:
 
 
 ## Sets [param rules] from the set's `director:` block and difficulty. False (nothing touched) for a pure schedule.
-func apply_to_rules(rules: DotNpcDirectorRules) -> bool:
+func apply_to_rules(rules: GSNpcDirectorRules) -> bool:
 	if director.is_empty():
 		return false
 	rules.skill_enabled = bool(director.get("skill", false))
@@ -207,21 +207,21 @@ func apply_to_rules(rules: DotNpcDirectorRules) -> bool:
 		var b: int = director["specials_budget"]
 		rules.specials_enabled = b > 0
 		rules.special_budget_cap = maxi(b, 1)
-	if DotNpcDirectorDifficulty.has_preset(difficulty):
+	if GSNpcDirectorDifficulty.has_preset(difficulty):
 		rules.difficulty_enabled = true
 		rules.difficulty_preset = difficulty
 	return true
 
 
 ## A wave's size after the director's skill, clamped to the rules' skill range; unchanged when the set's skill is off.
-func skilled_size(size: int, skill: float, rules: DotNpcDirectorRules) -> int:
+func skilled_size(size: int, skill: float, rules: GSNpcDirectorRules) -> int:
 	if not director.get("skill", false) or rules == null:
 		return size
 	return maxi(int(round(float(size) * clampf(skill, rules.skill_min, rules.skill_max))), 1)
 
 
 ## The part of a wave's specials the budget may spend now: whole units, in id order. The budget refuses; this does not go round it.
-static func specials_within_budget(spec: DotWaveSpec, budget: float) -> Dictionary:
+static func specials_within_budget(spec: GSWaveSpec, budget: float) -> Dictionary:
 	var left := int(floor(budget))
 	var out := {}
 	var ids := spec.specials.keys()
@@ -247,7 +247,7 @@ func progress_of(key: String) -> float:
 
 func describe() -> Dictionary:
 	return {
-		"id": id, "style": DotNpcDirectorWaves.STYLE_NAMES[style], "count": count, "difficulty": difficulty,
+		"id": id, "style": GSNpcDirectorWaves.STYLE_NAMES[style], "count": count, "difficulty": difficulty,
 		"entries": _exact.size() + _ranges.size() + (1 if _has_last else 0), "pool": pool.duplicate(),
 		"director": director.duplicate(), "extends": chain, "warnings": warnings.size(),
 	}
@@ -255,7 +255,7 @@ func describe() -> Dictionary:
 
 func describe_lines() -> PackedStringArray:
 	var out := PackedStringArray()
-	out.append("wave set   %s, %s x%d, difficulty %s, %d entries, %d warnings" % [id, DotNpcDirectorWaves.STYLE_NAMES[style], count, difficulty, _exact.size() + _ranges.size() + (1 if _has_last else 0), warnings.size()])
+	out.append("wave set   %s, %s x%d, difficulty %s, %d entries, %d warnings" % [id, GSNpcDirectorWaves.STYLE_NAMES[style], count, difficulty, _exact.size() + _ranges.size() + (1 if _has_last else 0), warnings.size()])
 	out.append("  extends  %s" % " -> ".join(chain))
 	for src in sources:
 		out.append("  layer    %s" % src)
@@ -266,10 +266,10 @@ func describe_lines() -> PackedStringArray:
 	return out
 
 
-func _load(profile: DotProfile, p_difficulty: String, npc_exists: Callable) -> PackedStringArray:
+func _load(profile: GSProfile, p_difficulty: String, npc_exists: Callable) -> PackedStringArray:
 	var errs := PackedStringArray()
 	var v := profile.values
-	style = DotNpcDirectorWaves.style_from(v["style"])
+	style = GSNpcDirectorWaves.style_from(v["style"])
 	count = v["count"]
 	first_quiet = v["first_quiet"]
 	quiet = v["quiet"]
@@ -296,11 +296,11 @@ func _load(profile: DotProfile, p_difficulty: String, npc_exists: Callable) -> P
 	_load_director(v["director"], errs)
 	_load_difficulties(v["difficulty"], p_difficulty, errs)
 
-	var cycle: bool = style == DotNpcDirectorWaves.Style.CYCLE
+	var cycle: bool = style == GSNpcDirectorWaves.Style.CYCLE
 	var key := "nights" if cycle else "waves"
 	var other := "waves" if cycle else "nights"
 	if not (v[other] as Dictionary).is_empty():
-		errs.append("%s: a %s set takes '%s:' entries" % [other, DotNpcDirectorWaves.STYLE_NAMES[style], key])
+		errs.append("%s: a %s set takes '%s:' entries" % [other, GSNpcDirectorWaves.STYLE_NAMES[style], key])
 	if cycle and seconds <= 0.0:
 		errs.append("seconds: a night needs a length")
 	_load_entries(v[key], key, errs)
@@ -320,7 +320,7 @@ func _load(profile: DotProfile, p_difficulty: String, npc_exists: Callable) -> P
 		for n in missing:
 			errs.append("no NPC '%s' (wave %s)" % [n, missing[n]])
 	if errs.is_empty():
-		var sched := DotNpcDirectorWaves.new()
+		var sched := GSNpcDirectorWaves.new()
 		fill_schedule(sched, 1)
 		var res := sched.validate()
 		if not res.ok:
@@ -329,7 +329,7 @@ func _load(profile: DotProfile, p_difficulty: String, npc_exists: Callable) -> P
 
 
 ## Copies the set's numbers onto [param sched] and binds it so each wave resolves through the set.
-func fill_schedule(sched: DotNpcDirectorWaves, players: int) -> void:
+func fill_schedule(sched: GSNpcDirectorWaves, players: int) -> void:
 	sched.style = style
 	sched.count = count
 	sched.first_quiet_seconds = first_quiet
@@ -463,7 +463,7 @@ func _call_validate_extra(e: Dictionary, ctx: String, errs: PackedStringArray) -
 	if e.is_empty() or not validate_extra.is_valid():
 		return
 	var res: Variant = validate_extra.call(e)
-	if res is DotResult and not res.ok:
+	if res is GSResult and not res.ok:
 		errs.append("%s: %s" % [ctx, res.error.message])
 
 
@@ -648,7 +648,7 @@ func _entry(k: int) -> Dictionary:
 			if key == "pool":
 				acc["pool"] = _merge_pool(acc["pool"], layer["pool"])
 			elif key == "extra":
-				DotAddonConfig.merge(acc["extra"], layer["extra"].duplicate(true))
+				GSAddonConfig.merge(acc["extra"], layer["extra"].duplicate(true))
 			else:
 				acc[key] = layer[key]
 	return acc

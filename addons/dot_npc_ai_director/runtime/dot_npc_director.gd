@@ -1,27 +1,27 @@
 @tool
-class_name DotNpcDirector
+class_name GSNpcDirector
 extends "dot_npc_director_inputs.gd"
 
 ## Population and pacing. The co-operative survival shooters' director, over a
-## [DotNpcSpawner].
+## [GSNpcSpawner].
 ##
 ## [b]Four phases and one number.[/b] BUILD_UP raises the population until the players
 ## are having a hard time; SUSTAIN holds it there briefly; FADE lets it fall; RELAX
 ## leaves them alone until they have both breathed and moved. The number is
-## [DotNpcDirectorStress], and it is what makes this a director rather than a spawn
+## [GSNpcDirectorStress], and it is what makes this a director rather than a spawn
 ## timer: a team that is struggling gets a moment to recover and a team that is coasting
 ## gets something to do, from the same rules, with no difficulty setting.
 ##
-## [b]It owns no NPCs.[/b] Every spawn, cap, reclaim and budget is [DotNpcSpawner]'s;
+## [b]It owns no NPCs.[/b] Every spawn, cap, reclaim and budget is [GSNpcSpawner]'s;
 ## this decides how many and where, and the spawner is free to refuse. That division is
 ## why a game can run a director on some maps and not others without two population
 ## systems.
 ##
 ## [codeblock]
-## var director := DotNpcDirector.new()
+## var director := GSNpcDirector.new()
 ## director.spawner = npcs
-## director.rules = DotNpcDirectorRules.new()
-## director.flow = DotNpcDirectorFlow.new(map.critical_path)
+## director.rules = GSNpcDirectorRules.new()
+## director.flow = GSNpcDirectorFlow.new(map.critical_path)
 ## director.population = [&"zombie", &"zombie", &"brute"]   # weighted by repetition
 ## add_child(director)
 ##
@@ -52,11 +52,11 @@ enum Phase {
 @export_group("Wiring")
 
 ## The spawner this director drives. Required.
-@export var spawner_ref: DotNodeRef = null
+@export var spawner_ref: GSNodeRef = null
 
 @export_group("Rules")
 
-@export var rules: DotNpcDirectorRules = null
+@export var rules: GSNpcDirectorRules = null
 
 ## What may be spawned, by id. Repetition is the weighting.
 ##
@@ -71,13 +71,13 @@ enum Phase {
 @export var enabled: bool = true
 
 ## While this grace runs the director spawns and reclaims nothing; the game ticks it.
-var grace: DotNpcDirectorGrace = null
+var grace: GSNpcDirectorGrace = null
 
 ## The spawner, resolved. Assignable directly for a host that has one to hand.
-var spawner: DotNpcSpawner = null
+var spawner: GSNpcSpawner = null
 
 ## The map's critical path. Null or empty for an arena.
-var flow: DotNpcDirectorFlow = null
+var flow: GSNpcDirectorFlow = null
 
 
 var _phase: Phase = Phase.BUILD_UP
@@ -92,12 +92,12 @@ var _last_spawn_at: float = -1000.0
 var _last_reclaim_at: float = -1000.0
 
 ## How many spawns have come from behind the party, and how many in total. What
-## [member DotNpcDirectorRules.behind_fraction] is enforced against.
+## [member GSNpcDirectorRules.behind_fraction] is enforced against.
 var _behind_spawns: int = 0
 var _total_spawns: int = 0
 
 
-var _specials := DotNpcDirectorSpecials.new()
+var _specials := GSNpcDirectorSpecials.new()
 
 var wave_count: int = 0
 var spawn_count: int = 0
@@ -141,12 +141,12 @@ func _ready() -> void:
 		return
 
 	if rules == null:
-		rules = DotNpcDirectorRules.new()
+		rules = GSNpcDirectorRules.new()
 
 	var valid := rules.validate()
 
 	if not valid.ok:
-		DotLog.warn(CHANNEL, "director rules are not usable", {
+		GSLog.warn(CHANNEL, "director rules are not usable", {
 			"why": valid.error.message
 		})
 
@@ -154,15 +154,15 @@ func _ready() -> void:
 		var resolved := spawner_ref.resolve(self)
 
 		if resolved.ok:
-			spawner = resolved.value as DotNpcSpawner
+			spawner = resolved.value as GSNpcSpawner
 
 	if spawner == null:
-		DotLog.warn(CHANNEL, "the director has no spawner and will do nothing", {})
+		GSLog.warn(CHANNEL, "the director has no spawner and will do nothing", {})
 
 	_specials.reset(rules)
 
 	if rules.skill_enabled or rules.difficulty_enabled or rules.specials_enabled:
-		DotLog.info(CHANNEL, "director adaptation on", {
+		GSLog.info(CHANNEL, "director adaptation on", {
 			"skill": rules.skill_enabled,
 			"difficulty": rules.difficulty_enabled,
 			"specials": rules.specials_enabled,
@@ -177,17 +177,17 @@ func skill_multiplier(id: StringName) -> float:
 	if rules == null or not rules.skill_enabled or not _skills.has(id):
 		return 1.0
 
-	return (_skills[id] as DotNpcDirectorSkill).multiplier(rules)
+	return (_skills[id] as GSNpcDirectorSkill).multiplier(rules)
 
 
 ## Enemy accuracy multiplier for the host to apply; 1.0 while difficulty is off.
 func enemy_accuracy_multiplier() -> float:
-	return DotNpcDirectorDifficulty.accuracy(rules)
+	return GSNpcDirectorDifficulty.accuracy(rules)
 
 
 ## Enemy damage multiplier for the host to apply; 1.0 while difficulty is off.
 func enemy_damage_multiplier() -> float:
-	return DotNpcDirectorDifficulty.damage(rules)
+	return GSNpcDirectorDifficulty.damage(rules)
 
 
 ## Specials that may still be spawned right now by the budget alone.
@@ -220,7 +220,7 @@ func tick(delta: float) -> void:
 	# No `> 0.0` guard on the interval.
 	#
 	# Zero means "every tick" here, exactly as it does for `spawn_interval` and for
-	# `DotNpcLimits.spawn_interval` — and the first version of this line read it as
+	# `GSNpcLimits.spawn_interval` — and the first version of this line read it as
 	# "never", so a game that turned the wait off got a director that never reclaimed
 	# anything. Two settings named the same way meaning opposite things at zero is the
 	# kind of difference nobody reads twice.
@@ -231,7 +231,7 @@ func tick(delta: float) -> void:
 
 func _advance_stress(delta: float) -> void:
 	for id in _players:
-		var player: DotNpcDirectorStress = _players[id]
+		var player: GSNpcDirectorStress = _players[id]
 		var threats := 0
 
 		if rules.stress_threat_radius > 0.0:
@@ -246,7 +246,7 @@ func _advance_skill(delta: float) -> void:
 
 	for id in _players:
 		var skill := _skill_of(id)
-		skill.add_damage((_players[id] as DotNpcDirectorStress).last_loss)
+		skill.add_damage((_players[id] as GSNpcDirectorStress).last_loss)
 		skill.advance(rules, delta)
 
 
@@ -259,7 +259,7 @@ func stress() -> float:
 	var total := 0.0
 
 	for id in _players:
-		var value := (_players[id] as DotNpcDirectorStress).value
+		var value := (_players[id] as GSNpcDirectorStress).value
 		worst = maxf(worst, value)
 		total += value
 
@@ -307,11 +307,11 @@ func _go_to(to: Phase) -> void:
 		# during the fight — which is most of it, and the relax would be over before it
 		# began.
 		for id in _players:
-			(_players[id] as DotNpcDirectorStress).reset_travel()
+			(_players[id] as GSNpcDirectorStress).reset_travel()
 
 	phase_changed.emit(from, to)
 
-	DotLog.debug(CHANNEL, "pacing", {
+	GSLog.debug(CHANNEL, "pacing", {
 		"from": Phase.keys()[from],
 		"to": Phase.keys()[to],
 		"stress": "%.2f" % stress(),
@@ -421,8 +421,8 @@ func _spawn_toward_target() -> void:
 		# target, the scoring of a spawn point — is arithmetic on points in GameSpice NPC's own
 		# plane and is identical either way. A 2D game forking this file to change one
 		# call would be forking the whole director to avoid a `Vector3`.
-		var made: DotNpcInstance = (
-			spawner.spawn_2d(kind, DotNpcInstance.from_plane(at), &"director")
+		var made: GSNpcInstance = (
+			spawner.spawn_2d(kind, GSNpcInstance.from_plane(at), &"director")
 			if spawner.two_dimensional
 			else spawner.spawn(kind, at, &"director")
 		)
@@ -472,10 +472,10 @@ func _kind_within_budget(kind: StringName, start: int) -> StringName:
 ## legal one wins, which sounds like the same thing and is not: an unscored search that
 ## takes the first legal point puts every wave in the same doorway, because the point
 ## list is in the order the map generated it.
-func choose_spawn_point() -> DotResult:
+func choose_spawn_point() -> GSResult:
 	if spawn_points.is_empty():
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"The director has no spawn points, so it has nowhere to put anything."
 		)
 
@@ -503,8 +503,8 @@ func choose_spawn_point() -> DotResult:
 			found = true
 
 	if not found:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"No spawn point is far enough, near enough and out of sight.",
 			"%d considered" % spawn_points.size()
 		)
@@ -514,7 +514,7 @@ func choose_spawn_point() -> DotResult:
 		_behind_spawns += 1
 
 	last_site = best_site
-	return DotResult.success(best)
+	return GSResult.success(best)
 
 
 ## How much [method choose_spawn_point] wants [param point] (higher is better), or -INF where
@@ -575,7 +575,7 @@ func _party_flow() -> float:
 	var furthest := 0.0
 
 	for id in _players:
-		furthest = maxf(furthest, flow.flow_of((_players[id] as DotNpcDirectorStress).position))
+		furthest = maxf(furthest, flow.flow_of((_players[id] as GSNpcDirectorStress).position))
 
 	return furthest
 
@@ -587,14 +587,14 @@ func _wanted_flow() -> float:
 ## Whether any player has line of sight to [param point].
 ##
 ## Uses the spawner's world, and answers "no" when there is no physics world — for
-## [DotNpcSenses]' reason: refusing every spawn in a scene that is not in a viewport
+## [GSNpcSenses]' reason: refusing every spawn in a scene that is not in a viewport
 ## would make a headless suite unable to place anything, and a suite that cannot place
 ## anything tests nothing.
 func _is_visible_to_any_player(point: Vector3) -> bool:
 	if spawner == null:
 		return false
 
-	# Asked of the viewport rather than of the spawner. A [DotNpcSpawner] is a plain
+	# Asked of the viewport rather than of the spawner. A [GSNpcSpawner] is a plain
 	# [Node] and has no `get_world_3d` — the obvious call does not exist, and written as
 	# a duck-typed one it does not even compile, because GDScript cannot infer the type
 	# of what a `has_method` branch returns.
@@ -614,7 +614,7 @@ func _is_visible_to_any_player(point: Vector3) -> bool:
 		return false
 
 	for id in _players:
-		var player: DotNpcDirectorStress = _players[id]
+		var player: GSNpcDirectorStress = _players[id]
 
 		# Raised to about eye height at both ends. A ray between two points on the floor
 		# is blocked by every kerb and doorstep, so a floor-to-floor test reports that
@@ -648,7 +648,7 @@ func _reclaim_behind() -> void:
 			continue
 
 		if flow.flow_of(npc.position()) < behind_of:
-			spawner.remove(npc.instance_id, DotNpcSpawner.REASON_RECLAIMED)
+			spawner.remove(npc.instance_id, GSNpcSpawner.REASON_RECLAIMED)
 
 
 # --- Reporting -------------------------------------------------------------------
@@ -694,7 +694,7 @@ func describe_lines() -> PackedStringArray:
 
 	if rules.difficulty_enabled:
 		out.append("difficulty   dial %.2f, accuracy x%.2f, damage x%.2f" % [
-			DotNpcDirectorDifficulty.dial_of(rules), enemy_accuracy_multiplier(), enemy_damage_multiplier()
+			GSNpcDirectorDifficulty.dial_of(rules), enemy_accuracy_multiplier(), enemy_damage_multiplier()
 		])
 
 	if rules.specials_enabled:
@@ -703,7 +703,7 @@ func describe_lines() -> PackedStringArray:
 		])
 
 	for id in _players:
-		var player: DotNpcDirectorStress = _players[id]
+		var player: GSNpcDirectorStress = _players[id]
 		out.append("  %-16s stress %.2f  health %.0f%%  travelled %.0f m%s" % [
 			String(id), player.value, player.health_fraction * 100.0, player.travelled,
 			"  skill x%.2f" % skill_multiplier(id) if rules.skill_enabled else ""
