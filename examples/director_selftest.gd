@@ -27,7 +27,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai-director self-test")
+	print("gs-npc-ai-director self-test")
 	print("")
 
 	_world = Node3D.new()

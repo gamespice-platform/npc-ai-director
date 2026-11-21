@@ -1,6 +1,6 @@
 @tool
 class_name GSNpcDirector
-extends "dot_npc_director_inputs.gd"
+extends "gs_npc_director_inputs.gd"
 
 ## Population and pacing. The co-operative survival shooters' director, over a
 ## [GSNpcSpawner].

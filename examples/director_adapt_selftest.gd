@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai-director adaptation self-test")
+	print("gs-npc-ai-director adaptation self-test")
 	_world = Node3D.new()
 	add_child(_world)
 

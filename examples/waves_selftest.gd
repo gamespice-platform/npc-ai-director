@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai-director waves self-test")
+	print("gs-npc-ai-director waves self-test")
 	_test_parse()
 	_test_ranges()
 	_test_last()

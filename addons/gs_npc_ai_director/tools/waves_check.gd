@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Loads every wave set of a game in every tier and prints each one's problems, for server owners and CI.
-## Usage: godot --headless --path . --script res://addons/dot_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]
+## Usage: godot --headless --path . --script res://addons/gs_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]
 ## Exit 1 if any set fails; the output ends with [code]WAVES_CHECK sets=N failed=M[/code].
 
 

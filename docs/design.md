@@ -36,7 +36,7 @@ The distance is the **least-travelled** player's, not the most: one player scout
 
 `GSNpcDirectorFlow` is the map's critical path as a distance along a line. Without it a director cannot spawn ahead of anybody, and **spawning ahead is most of what makes a director feel like a director**: a director that spawned evenly around the party makes retreating impossible, which removes the only decision the players had.
 
-"Ahead" cannot be a direction (a party walking a horseshoe corridor is facing away from where it is going for half the map), so it has to be a position along the route the level was built around. In this family's code-built maps that route is a handful of constants, and dot-map's catalogue is where a game would keep it.
+"Ahead" cannot be a direction (a party walking a horseshoe corridor is facing away from where it is going for half the map), so it has to be a position along the route the level was built around. In this family's code-built maps that route is a handful of constants, and gs-map's catalogue is where a game would keep it.
 
 - **A position is projected onto the nearest segment, not snapped to the nearest point.** A route of six points across a hundred metres would otherwise quantise every player's progress to twenty-metre steps, and the relax distance is measured in tens of metres.
 - **A map with no route answers honestly rather than refusing.** Placement degrades to "prefer the middle of the legal distance band", which is what a director in an arena should do anyway.
@@ -77,7 +77,7 @@ That is deliberately one branch in one function rather than a flag on this class
 
 | To change | Where |
 | --- | --- |
-| Where a wave may appear | `GSNpcDirector.spawn_points`, `set_spawn_points_from_nav`, or `set_sites` for authored sites with per-site rules (enabled, weight, phases, max_alive via `site_alive_fn`, sight, distance band, `site_filter`; duck-typed, so a GSSpawnPointDef fits without a dot-spawn dependency) |
+| Where a wave may appear | `GSNpcDirector.spawn_points`, `set_spawn_points_from_nav`, or `set_sites` for authored sites with per-site rules (enabled, weight, phases, max_alive via `site_alive_fn`, sight, distance band, `site_filter`; duck-typed, so a GSSpawnPointDef fits without a gs-spawn dependency) |
 | Every number the director has an opinion about | `GSNpcDirectorRules`, layered like every `GSConfig` |
 | What may be spawned, and in what proportion | `GSNpcDirector.population` |
 | Where "ahead" is | `GSNpcDirectorFlow`, from the map's critical path |
@@ -105,7 +105,7 @@ The stress cycle paces a team that is moving: its relax ends on distance travell
 
 - **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content. The director only rations which population ids count as special (`GSNpcDirectorSpecials`, off by default).
 - **No map events.** Scripted climaxes, safe rooms and finales are level scripting.
-- **No item or ammo placement.** Directors in the genre often do that too; here it is dot-loadout's world pickups and a game's decision, and joining them would make this addon depend on one more thing.
+- **No item or ammo placement.** Directors in the genre often do that too; here it is gs-loadout's world pickups and a game's decision, and joining them would make this addon depend on one more thing.
 - **No difficulty setting by default.** `difficulty_enabled` is off; when on, it only publishes accuracy and damage multipliers (`GSNpcDirectorDifficulty`) for the host to apply, because the director knows no combat addon.
 - **No player-versus-player director.** Deciding where a human-controlled special enemy may spawn is a different problem with a fairness constraint this has nothing to say about.
 

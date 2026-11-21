@@ -21,7 +21,7 @@ The director only decides how many and where. What an enemy does is up to its br
 
 You need [Godot 4.7](https://godotengine.org/download). [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap) clones every project and links the addons for you.
 
-By hand: copy `addons/dot_npc_ai_director/`, [GameSpice NPC](https://github.com/gamespice-platform/npc)'s `addons/dot_npc/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable them in **Project > Project Settings > Plugins**.
+By hand: copy `addons/gs_npc_ai_director/`, [GameSpice NPC](https://github.com/gamespice-platform/npc)'s `addons/gs_npc/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/gs_core/` into your project and enable them in **Project > Project Settings > Plugins**.
 
 ## Use
 

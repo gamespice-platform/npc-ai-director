@@ -1,16 +1,16 @@
-# dot-npc-ai-director
+# gs-npc-ai-director
 
 The co-operative survival shooters' director: population and pacing through a build-up / sustain / fade / relax cycle, driven by an estimate of how hard the players are having it rather than by a timer, spawning ahead of them along their route, out of sight, and reclaiming what is behind.
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is specific to the director.
 
-**The distributable is `addons/dot_npc_ai_director/`.** It depends on dot-core and dot-npc (both symlinked, `.gitignore`). Not on dot-npc-ai: a director decides *how many* and *where*, and what each NPC does when it gets there is a brain's business. A game can run this over dot-npc's own `GSNpcBrain` and never install a behaviour tree.
+**The distributable is `addons/gs_npc_ai_director/`.** It depends on gs-core and gs-npc (both symlinked, `.gitignore`). Not on gs-npc-ai: a director decides *how many* and *where*, and what each NPC does when it gets there is a brain's business. A game can run this over gs-npc's own `GSNpcBrain` and never install a behaviour tree.
 
-Also requires **GameSpice Profile** (`GSProfileSet`, `GSProfile`, `GSProfileRuntime`, split from GameSpice Core): link `addons/dot_profile` next to `addons/dot_core`.
+Also requires **GameSpice Profile** (`GSProfileSet`, `GSProfile`, `GSProfileRuntime`, split from GameSpice Core): link `addons/gs_profile` next to `addons/gs_core`.
 
 ```bash
-ln -s ../../dot-core/addons/dot_core addons/dot_core
-ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
+ln -s ../../gs-core/addons/gs_core addons/gs_core
+ln -s ../../gs-npc/addons/gs_npc addons/gs_npc
 ```
 
 ## Read before
@@ -24,18 +24,18 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 
 | Path | What |
 | --- | --- |
-| `addons/dot_npc_ai_director/core/dot_npc_director_stress.gd` | `GSNpcDirectorStress`: the estimate of what the players are experiencing |
-| `addons/dot_npc_ai_director/core/dot_npc_director_flow.gd` | `GSNpcDirectorFlow`: the map's critical path as a distance along a line |
-| `addons/dot_npc_ai_director/core/dot_npc_director_grace.gd` | `GSNpcDirectorGrace`: a start-of-round countdown; set as `director.grace`, the director spawns nothing while it runs |
-| `addons/dot_npc_ai_director/core/dot_npc_director_rules.gd` | `GSNpcDirectorRules`: every number, a `GSConfig` |
-| `addons/dot_npc_ai_director/core/dot_npc_director_waves.gd` | `GSNpcDirectorWaves`: a hold-out's schedule (waves, days and nights, a clock) |
-| `addons/dot_npc_ai_director/core/dot_npc_stuck_rescue.gd` | `GSNpcStuckRescue`: per-NPC progress toward the players, answering NONE, REPATH or RELOCATE after configurable stalls (shorter when few NPCs remain); the game does the repath and the move |
-| `addons/dot_npc_ai_director/core/dot_wave_set.gd` | `GSWaveSet`: a `waves` profile (kind `waves`, `cfg/game/<game>/waves/<id>.yml`) resolved to a `GSWaveSpec` per wave; ranges, `last`, difficulty, validation, the `wave_resolved` hook, the per-map `progress` signal ([waves](docs/waves.md)) |
-| `addons/dot_npc_ai_director/tools/waves_check.gd` | the headless validator for every wave set of a game |
-| `cfg/addons/dot_npc_ai_director/waves/hold.yml` | the neutral default set a game `extends` |
-| `addons/dot_npc_ai_director/dot_npc_ai_director_api.gd` | the API level (`GSAddonApi`): 4 since `GSWaveSet` |
-| `addons/dot_npc_ai_director/runtime/dot_npc_director.gd` | `GSNpcDirector`: the phase cycle, placement, reclaiming |
-| `addons/dot_npc_ai_director/runtime/dot_npc_director_inputs.gd` | Its parent part: spawn points and sites (`set_sites`, `set_spawn_points_from_nav`), player reports and skill records |
+| `addons/gs_npc_ai_director/core/gs_npc_director_stress.gd` | `GSNpcDirectorStress`: the estimate of what the players are experiencing |
+| `addons/gs_npc_ai_director/core/gs_npc_director_flow.gd` | `GSNpcDirectorFlow`: the map's critical path as a distance along a line |
+| `addons/gs_npc_ai_director/core/gs_npc_director_grace.gd` | `GSNpcDirectorGrace`: a start-of-round countdown; set as `director.grace`, the director spawns nothing while it runs |
+| `addons/gs_npc_ai_director/core/gs_npc_director_rules.gd` | `GSNpcDirectorRules`: every number, a `GSConfig` |
+| `addons/gs_npc_ai_director/core/gs_npc_director_waves.gd` | `GSNpcDirectorWaves`: a hold-out's schedule (waves, days and nights, a clock) |
+| `addons/gs_npc_ai_director/core/gs_npc_stuck_rescue.gd` | `GSNpcStuckRescue`: per-NPC progress toward the players, answering NONE, REPATH or RELOCATE after configurable stalls (shorter when few NPCs remain); the game does the repath and the move |
+| `addons/gs_npc_ai_director/core/gs_wave_set.gd` | `GSWaveSet`: a `waves` profile (kind `waves`, `cfg/game/<game>/waves/<id>.yml`) resolved to a `GSWaveSpec` per wave; ranges, `last`, difficulty, validation, the `wave_resolved` hook, the per-map `progress` signal ([waves](docs/waves.md)) |
+| `addons/gs_npc_ai_director/tools/waves_check.gd` | the headless validator for every wave set of a game |
+| `cfg/addons/gs_npc_ai_director/waves/hold.yml` | the neutral default set a game `extends` |
+| `addons/gs_npc_ai_director/gs_npc_ai_director_api.gd` | the API level (`GSAddonApi`): 4 since `GSWaveSet` |
+| `addons/gs_npc_ai_director/runtime/gs_npc_director.gd` | `GSNpcDirector`: the phase cycle, placement, reclaiming |
+| `addons/gs_npc_ai_director/runtime/gs_npc_director_inputs.gd` | Its parent part: spawn points and sites (`set_sites`, `set_spawn_points_from_nav`), player reports and skill records |
 | `examples/director_selftest.tscn` | the suite; non-zero on failure |
 | `examples/director_adapt_selftest.tscn` | the skill, difficulty and specials suite |
 | `examples/waves_selftest.tscn` | the wave-set suite (fixtures in `fixtures/cfg*`) |
@@ -61,6 +61,6 @@ The suite turns the out-of-sight rule off (`spawn_out_of_sight = false`), and sa
 - 2D is the spawner's question (`two_dimensional`), one branch at the spawn; never a flag here. [design](docs/design.md#a-2d-game-drives-this-unchanged)
 - A hold-out is `GSNpcDirectorWaves`, not the stress cycle (whose relax waits for distance a holding team never travels); it spawns nothing, a wave is released by `take` and owed again by `give_back`, and a wave ends on `overtime_seconds` as well as on being cleared. [design](docs/design.md#a-hold-out-is-a-schedule-not-a-cycle)
 - Wave sets are config: numbers in `waves` profiles, meaning in the game (`extra.<game>`, the `wave_resolved` hook); the director holds NPC ids and never loads an NPC or names a map. [waves](docs/waves.md)
-- Adding anything a game can call bumps `LEVEL` in `dot_npc_ai_director_api.gd` (GSAddonApi's rule).
+- Adding anything a game can call bumps `LEVEL` in `gs_npc_ai_director_api.gd` (GSAddonApi's rule).
 
 Skill, difficulty multipliers and a specials budget are optional rules, off by default ([design](docs/design.md#optional-adaptation-all-off-by-default)). Deliberately not here: special enemy behaviour, map events, item placement, a player-versus-player director. [design](docs/design.md#deliberately-not-here)

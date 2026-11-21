@@ -4,7 +4,7 @@ extends RefCounted
 ## A hold-out's waves as config: one `waves` profile resolved to a [GSWaveSpec] per wave.
 ## A wave with no entry is generated from the formula in [GSNpcDirectorWaves]. Design: docs/waves.md.
 
-const ADDON := "dot_npc_ai_director"
+const ADDON := "gs_npc_ai_director"
 const KIND := "waves"
 const CHANNEL := "waves"
 
