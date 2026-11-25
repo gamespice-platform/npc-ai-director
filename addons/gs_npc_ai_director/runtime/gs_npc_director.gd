@@ -491,6 +491,8 @@ func choose_spawn_point() -> GSResult:
 	var best_site: Variant = null
 	var use_sites := not _sites.is_empty() and _sites.size() == spawn_points.size()
 
+	_scan_players()
+
 	for index in spawn_points.size():
 		var point := spawn_points[index]
 		var site: Variant = _sites[index] if use_sites else null
@@ -501,6 +503,8 @@ func choose_spawn_point() -> GSResult:
 			best = point
 			best_site = site
 			found = true
+
+	_end_scan()
 
 	if not found:
 		return GSResult.fail(

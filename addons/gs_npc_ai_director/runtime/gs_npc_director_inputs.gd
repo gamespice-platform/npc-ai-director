@@ -30,6 +30,9 @@ const SITE_WEIGHT_METRES := 10.0
 
 ## Player id -> GSNpcDirectorStress.
 var _players: Dictionary = {}
+## The players' positions for one spawn choice's scan of the candidate points; see [method _scan_players].
+var _scan_positions: PackedVector3Array = PackedVector3Array()
+var _scan_valid := false
 
 ## Player id -> GSNpcDirectorSkill. Empty while skill is off.
 var _skills: Dictionary = {}
@@ -166,10 +169,36 @@ func party_travel() -> float:
 	return least
 
 
+## Distance from [param point] to the closest player; INF with none. Squared distances over the positions
+## [method _scan_players] gathered, one square root at the end: same value as the per-player distance_to
+## minimum, and no Dictionary walk or Object cast per candidate point.
 func _distance_to_nearest_player(point: Vector3) -> float:
+	var one_off := not _scan_valid
+
+	if one_off:
+		_scan_players()
+
 	var nearest := INF
 
-	for id in _players:
-		nearest = minf(nearest, point.distance_to((_players[id] as GSNpcDirectorStress).position))
+	for position in _scan_positions:
+		nearest = minf(nearest, point.distance_squared_to(position))
 
-	return nearest
+	_scan_valid = _scan_valid and not one_off
+	return sqrt(nearest)
+
+
+## Gathers the players' positions once for a run of [method _distance_to_nearest_player] calls (one spawn
+## choice scans every candidate point); [method _end_scan] drops them so a later call sees moved players.
+func _scan_players() -> void:
+	_scan_positions.resize(_players.size())
+	var i := 0
+
+	for id in _players:
+		_scan_positions[i] = (_players[id] as GSNpcDirectorStress).position
+		i += 1
+
+	_scan_valid = true
+
+
+func _end_scan() -> void:
+	_scan_valid = false

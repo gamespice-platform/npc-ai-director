@@ -12,13 +12,13 @@ extends "res://examples/selftest/director_waves.gd"
 ## face, and a reclaim that deletes the ambush the party is walking into. All four are
 ## here, driven by a stress figure fed the way a real game would feed it.
 
-const CHECKS := 94
+const CHECKS := 97
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
 ## bailed out early after a failed guard is counted as not finished on purpose. The CHECKS
 ## total is the other half — see docs/testing.md.
-const SECTIONS := 20
+const SECTIONS := 21
 
 
 func _ready() -> void:
@@ -42,6 +42,7 @@ func _run() -> void:
 	_test_relax_needs_both()
 	_test_relax_breaks_on_disaster()
 	_test_spawn_points_from_nav()
+	_test_nearest_player_distance()
 	_test_placement_distance()
 	_test_placement_ahead()
 	_test_placement_refuses()
@@ -468,6 +469,37 @@ func _test_spawn_points_from_nav() -> void:
 		director.spawn_points.is_empty(),
 		"and clears whatever was there, so a map change does not leave the last map's"
 	)
+
+	director.queue_free()
+	_done()
+
+
+func _test_nearest_player_distance() -> void:
+	_section("placement: nearest player distance")
+
+	var director := _director(_spawner(), _rules())
+	var probes := [Vector3(3, 1, -4), Vector3(100, 0, 100), Vector3(-7.5, 2.25, 11.125)]
+
+	_check(is_inf(director._distance_to_nearest_player(probes[0])), "no player: INF")
+
+	director.report_player(&"a", Vector3(1, 0, 2), 1.0)
+	director.report_player(&"b", Vector3(-30, 5, 8), 1.0)
+	director.report_player(&"c", Vector3(60, 0, -20), 1.0)
+
+	var same := true
+
+	for point: Vector3 in probes:
+		var want := INF
+
+		for p: Vector3 in [Vector3(1, 0, 2), Vector3(-30, 5, 8), Vector3(60, 0, -20)]:
+			want = minf(want, point.distance_to(p))
+
+		same = same and is_equal_approx(director._distance_to_nearest_player(point), want)
+
+	_check(same, "squared scan equals the per-player minimum")
+
+	director.report_player(&"a", Vector3(500, 0, 0), 1.0)
+	_check(is_equal_approx(director._distance_to_nearest_player(probes[0]), probes[0].distance_to(Vector3(-30, 5, 8))), "a moved player is seen on the next call")
 
 	director.queue_free()
 	_done()
