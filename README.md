@@ -2,7 +2,7 @@
 
 Decides how many enemies are alive and where new ones appear, based on how hard the players are having it. It also has a wave, night and clock scheduler for games where the players hold a place.
 
-Part of the [**GameSpice**](https://gamespice.net) collection: modular, MIT-licensed building blocks for games on the GameSpice platform (only the TMC website back end is closed). It was built with Claude Code and its headless suites pass, but little of it has met real players yet, so expect rough edges and please report what you find.
+Part of the [**GameSpice**](https://gamespice.net) collection: modular, MIT-licensed building blocks for games on the GameSpice platform (only the TMC website back end is closed). It is MIT, built with Claude Code, and has headless self-tests you run with Godot (see Test below). It is also in use: the games in [Zee's Games](https://zeesgames.com) are built on GameSpice addons like this one and run on live servers, so the director has been through real play.
 
 ## How it works
 
@@ -130,6 +130,18 @@ godot --headless --path . res://examples/director_selftest.tscn
 godot --headless --path . res://examples/director_adapt_selftest.tscn
 godot --headless --path . res://examples/waves_selftest.tscn
 ```
+
+## Used by
+
+These games vendor the director and use it to pace their enemies:
+
+- [Hungario](https://zeesgames.com/hungario)
+- [Airdrift](https://zeesgames.com/airdrift)
+- [Zombie Zone](https://zeesgames.com/zombie-zone)
+- [Fatal Contact](https://zeesgames.com/fatal-contact)
+- [Playlot](https://zeesgames.com/playlot)
+
+The whole collection is at [zeesgames.com](https://zeesgames.com).
 
 ## Licence
 
